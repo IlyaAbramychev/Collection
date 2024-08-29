@@ -1,46 +1,26 @@
-# Getting Started with Create React App
+# "Сборник" — Платформа для Публикации и Обмена Знаниями
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**"Сборник"** — это инновационная платформа для публикации и обмена знаниями, которая объединяет студентов, преподавателей, ученых и профессионалов из различных областей. Здесь вы можете публиковать свои научные статьи, исследовательские работы, обзоры и другие материалы, а также находить и читать работы коллег.
 
-## Available Scripts
+## Особенности "Сборника":
 
-In the project directory, you can run:
+- **Личные и организационные профили**
+Пользователи могут публиковать материалы как от собственного имени, так и от имени своей организации или учебного заведения.
 
-### `npm start`
+- **Платформа для университетов**
+Каждое учебное заведение может создать собственный раздел для публикации студенческих работ и научных исследований, что облегчает процесс защиты и обмена знаниями внутри академического сообщества.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **Разнообразие контента**
+"Сборник" поддерживает публикации в различных дисциплинах — от инженерии до гуманитарных наук, что делает его идеальным местом для междисциплинарного обмена знаниями.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+- **Отзывы и рецензии**
+Читатели могут оставлять отзывы и рецензии на публикации, что способствует развитию конструктивного диалога и улучшению качества представленных материалов.
 
-### `npm test`
+- **Простота и удобство**
+Платформа разработана с учетом современных требований к удобству использования и минимизации нагрузки на глаза, обеспечивая комфортное чтение и работу с текстами.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Цель "Сборника"
 
-### `npm run build`
+Цель "Сборника" — стать ведущей площадкой для публикации и обмена научными знаниями, способствовать развитию профессиональных связей и помочь студентам и ученым донести свои исследования до широкой аудитории.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+**Присоединяйтесь к "Сборнику" и станьте частью сообщества, которое стремится к продвижению науки и образования!**
