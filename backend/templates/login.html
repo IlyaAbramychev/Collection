@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Войти</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Войти</h2>
+        <form method="POST" action="/login">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" required><br><br>
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required><br><br>
+            <input type="submit" value="Войти" class="button">
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #F4F4F4;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background: linear-gradient(to right, #5DADE2, #48C9B0); /* Градиентный фон */
+    color: white;
+    padding: 20px 0;
+}
+
+header h1 {
+    margin: 0;
+    text-align: center;
+    font-size: 2.5em; /* Увеличенный размер шрифта */
+}
+
+header nav {
+    text-align: center;
+}
+
+header nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+header nav ul li {
+    display: inline;
+    margin-left: 20px;
+}
+
+header nav ul li a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease; /* Плавная анимация при наведении */
+}
+
+header nav ul li a:hover {
+    color: #F0FFFF; /* Изменение цвета при наведении */
+}
+
+main {
+    padding: 20px 0;
+}
+
+h2 {
+    color: #5DADE2;
+    text-align: center;
+    font-size: 2em; /* Увеличенный размер шрифта */
+    margin-bottom: 20px;
+}
+
+.article-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.article-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    transition: transform 0.3s ease; /* Плавная анимация при наведении */
+}
+
+.article-card:hover {
+    transform: translateY(-5px); /* Поднятие карточки при наведении */
+}
+
+.button {
+    background-color: #48C9B0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Плавная анимация при наведении */
+}
+
+.button:hover {
+    background-color: #3CB371; /* Изменение цвета при наведении */
+}
+
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+}
+/* Добавьте стили для article-card */
+.article-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.article-card h3 {
+    margin-top: 0;
+}
+
+.article-card p {
+    margin-bottom: 10px;
+}
+
+/* Добавьте стили для кнопки "Читать" */
+.button {
+    background-color: #48C9B0;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-decoration: none;
+}

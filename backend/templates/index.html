@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сборник</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Сборник</h1>
+            <nav>
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/articles">Статьи</a></li>
+                    <li><a href="/profile">Профиль</a></li>
+                    <li><a href="/login">Войти</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <section id="recommended-articles">
+                <h2>Рекомендуемые статьи</h2>
+                <div class="article-list">
+                    {% for article in recommended_articles %}
+                    <div class="article-card">
+                        <h3>{{ article.title }}</h3>
+                        <p>{{ article.summary }}</p>
+                        <a href="/article/{{ article.id }}" class="button">Читать</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            <section id="latest-publications">
+                <h2>Последние публикации</h2>
+                <div class="article-list">
+                    {% for article in latest_articles %}
+                    <div class="article-card">
+                        <h3>{{ article.title }}</h3>
+                        <p>{{ article.summary }}</p>
+                        <a href="/article/{{ article.id }}" class="button">Читать</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 Сборник</p>
+        </div>
+    </footer>
+</body>
+</html>
