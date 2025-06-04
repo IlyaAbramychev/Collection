@@ -5,6 +5,7 @@ import { lightTheme, darkTheme } from './theme';
 import MainLayout from './components/MainLayout';
 import RegistrationForm from './components/RegistrationForm';
 import LoginForm from './components/LoginForm';
+import WelcomeScreen from './components/WelcomeScreen';
 import Header from './components/Header';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
@@ -21,7 +22,8 @@ const App: React.FC = () => {
       <Router>
         <Header toggleTheme={toggleTheme} />
         <Routes>
-          <Route path="/" element={<MainLayout />} />
+          <Route path="/" element={<WelcomeScreen />} />
+          <Route path="/home" element={<MainLayout />} />
           <Route path="/register" element={<RegistrationForm />} />
           <Route path="/login" element={<LoginForm />} />
         </Routes>
