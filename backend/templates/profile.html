@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль — WorkNest</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <h1>WorkNest</h1>
+            <nav class="header-nav">
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/articles">Статьи</a></li>
+                    <li><a href="/profile">Профиль</a></li>
+                    <li><a href="/reg_login">Войти</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="profile-page">
+            <div class="profile-left">
+                <section class="profile-section">
+                    <h2>Мои публикации</h2>
+                    <div class="profile-articles-list">
+                        <!-- Карточки публикаций -->
+                        <div class="profile-article-card">
+                            <h3>Пример публикации</h3>
+                            <p>Краткое описание публикации или аннотация.</p>
+                        </div>
+                        <div class="profile-article-card">
+                            <h3>Ещё одна статья</h3>
+                            <p>Описание второй публикации пользователя.</p>
+                        </div>
+                    </div>
+                </section>
+                <section class="profile-section">
+                    <h2>Избранное</h2>
+                    <div class="profile-fav-list">
+                        <!-- Карточки избранного -->
+                        <div class="profile-fav-card">
+                            <h3>Избранная статья</h3>
+                            <p>Описание избранной публикации.</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <aside class="profile-right">
+                <div class="profile-card" id="profileCard">
+                    <div class="profile-avatar">
+                        <img src="{{ url_for('static', filename='img/font-user.svg') }}" alt="Аватар">
+                    </div>
+                    <div class="profile-info">
+                        <div class="profile-name">Иван Иванов</div>
+                        <div class="profile-status">Студент</div>
+                        <div class="profile-email">ivan.ivanov@example.com</div>
+                        <div class="profile-bio">Интересуюсь квантовыми вычислениями, нейросетями и современными технологиями образования.</div>
+                    </div>
+                    <button class="profile-edit-btn" id="editProfileBtn">Редактировать</button>
+                </div>
+                <div class="profile-activity">
+                    <h3>Активность</h3>
+                    <ul class="activity-list">
+                        <li>Опубликована статья “Квантовые вычисления” — 2 дня назад</li>
+                        <li>Добавлено в избранное “Нейронные сети” — 4 дня назад</li>
+                        <li>Комментарий к “Ядерные реакторы” — 1 неделю назад</li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 WorkNest</p>
+        </div>
+    </footer>
+    <div class="profile-edit-modal" id="profileEditModal" style="display:none;">
+        <div class="profile-edit-modal-bg"></div>
+        <form class="profile-edit-form">
+            <h2>Редактировать профиль</h2>
+            <label>Имя
+                <input type="text" name="name" value="Иван Иванов">
+            </label>
+            <label>Статус
+                <input type="text" name="status" value="Студент">
+            </label>
+            <label>Email
+                <input type="email" name="email" value="ivan.ivanov@example.com">
+            </label>
+            <label>О себе
+                <textarea name="bio">Интересуюсь квантовыми вычислениями, нейросетями и современными технологиями образования.</textarea>
+            </label>
+            <div class="profile-edit-actions">
+                <button type="submit" class="profile-edit-save">Сохранить</button>
+                <button type="button" class="profile-edit-cancel" id="closeEditModal">Отмена</button>
+            </div>
+        </form>
+    </div>
+    <script>
+document.getElementById('editProfileBtn').onclick = function() {
+    document.getElementById('profileEditModal').style.display = 'block';
+    setTimeout(() => {
+        document.getElementById('profileEditModal').classList.add('active');
+    }, 10);
+};
+document.getElementById('closeEditModal').onclick = function() {
+    document.getElementById('profileEditModal').classList.remove('active');
+    setTimeout(() => {
+        document.getElementById('profileEditModal').style.display = 'none';
+    }, 200);
+};
+document.querySelector('.profile-edit-modal-bg').onclick = function() {
+    document.getElementById('closeEditModal').click();
+};
+</script>
+</body>
+</html> 

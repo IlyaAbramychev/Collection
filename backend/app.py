@@ -23,5 +23,9 @@ def login():
         return redirect(url_for('index'))
     return render_template('reg_login.html')
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
