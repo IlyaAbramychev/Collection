@@ -3,55 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сборник</title>
+    <title>WorkNest</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/logo_ico.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header>
-        <div class="container">
-            <h1>Сборник</h1>
-            <nav>
+        <div class="header-inner">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <h1>WorkNest</h1>
+            <form class="header-search" action="/search" method="get">
+                <input type="text" name="q" placeholder="Поиск..." aria-label="Поиск">
+                <button type="submit" title="Найти">
+                    <img src="{{ url_for('static', filename='img/font-search.svg') }}" alt="Поиск" class="search-icon-img">
+                </button>
+            </form>
+            <nav class="header-nav">
                 <ul>
                     <li><a href="/">Главная</a></li>
                     <li><a href="/articles">Статьи</a></li>
                     <li><a href="/profile">Профиль</a></li>
-                    <li><a href="/login">Войти</a></li>
+                    <li><a href="/reg_login">Войти</a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <main>
         <div class="container">
-            <section id="recommended-articles">
-                <h2>Рекомендуемые статьи</h2>
+            <div class="section-block">
+                <div class="section-title">Рекомендуемые статьи</div>
                 <div class="article-list">
-                    {% for article in recommended_articles %}
                     <div class="article-card">
-                        <h3>{{ article.title }}</h3>
-                        <p>{{ article.summary }}</p>
-                        <a href="/article/{{ article.id }}" class="button">Читать</a>
+                        <h3>Как начать программировать с нуля</h3>
+                        <p>Пошаговое руководство для тех, кто только делает первые шаги в мире программирования.</p>
+                        <a href="#" class="button">Читать</a>
                     </div>
-                    {% endfor %}
+                    <div class="article-card">
+                        <h3>10 привычек продуктивного разработчика</h3>
+                        <p>Советы и лайфхаки, которые помогут повысить эффективность и качество работы.</p>
+                        <a href="#" class="button">Читать</a>
+                    </div>
                 </div>
-            </section>
-            <section id="latest-publications">
-                <h2>Последние публикации</h2>
+            </div>
+            <div class="section-block">
+                <div class="section-title">Последние публикации</div>
                 <div class="article-list">
-                    {% for article in latest_articles %}
                     <div class="article-card">
-                        <h3>{{ article.title }}</h3>
-                        <p>{{ article.summary }}</p>
-                        <a href="/article/{{ article.id }}" class="button">Читать</a>
+                        <h3>Обзор новых возможностей Python 3.12</h3>
+                        <p>Кратко о самых интересных нововведениях и изменениях в свежем релизе Python.</p>
+                        <a href="#" class="button">Читать</a>
                     </div>
-                    {% endfor %}
+                    <div class="article-card">
+                        <h3>Почему важно писать тесты для кода</h3>
+                        <p>Разбираем основные причины и преимущества тестирования программ.</p>
+                        <a href="#" class="button">Читать</a>
+                    </div>
+                    <div class="article-card">
+                        <h3>Как выбрать первый проект для портфолио</h3>
+                        <p>Практические рекомендации для начинающих разработчиков по выбору и реализации первого проекта.</p>
+                        <a href="#" class="button">Читать</a>
+                    </div>
                 </div>
-            </section>
+            </div>
         </div>
     </main>
     <footer>
         <div class="container">
-            <p>&copy; 2023 Сборник</p>
+            <p>&copy; 2023 WorkNest</p>
         </div>
     </footer>
+    <script src="{{ url_for('static', filename='search-typewriter.js') }}"></script>
 </body>
 </html>

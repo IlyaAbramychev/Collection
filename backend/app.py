@@ -13,7 +13,7 @@ articles = [
 def index():
     return render_template('index.html', recommended_articles=articles[:2], latest_articles=articles)
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/reg_login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -21,7 +21,7 @@ def login():
         # Проверка логина и пароля
         # ...
         return redirect(url_for('index'))
-    return render_template('login.html')
+    return render_template('reg_login.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

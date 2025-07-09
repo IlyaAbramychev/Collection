@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Playfair+Display:wght@700&display=swap');
+html, body {
+  height: 100%;
+}
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #F4F4F4;
-    color: #333;
-    margin: 0;
-    padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .container {
@@ -18,39 +20,86 @@ header {
     padding: 20px 0;
 }
 
-header h1 {
-    margin: 0;
-    text-align: center;
-    font-size: 2.5em; /* Увеличенный размер шрифта */
+.header-inner {
+  max-width: 1100px;
+  margin: 28px auto 0 auto;
+  background: linear-gradient(90deg, #4db6e2 0%, #3ec6b0 100%);
+  border-radius: 32px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 36px;
+  height: 90px;
+  position: relative;
+  transition: background 0.3s, box-shadow 0.3s, opacity 0.3s;
 }
-
-header nav {
-    text-align: center;
+.logo {
+  height: 56px;
+  width: 56px;
+  margin-right: 24px;
+  border-radius: 16px;
+  background: #fff;
+  object-fit: contain;
+  box-shadow: 0 2px 8px rgba(77,182,226,0.10);
 }
-
-header nav ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+.header-inner h1 {
+  flex: 1;
+  text-align: center;
+  font-size: 2.6em;
+  font-family: 'Playfair Display', 'Montserrat', serif;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1.5px;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(44, 62, 80, 0.18), 0 0 2px #3ec6b0;
 }
-
-header nav ul li {
-    display: inline;
-    margin-left: 20px;
+.header-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
-
-header nav ul li a {
-    color: white;
-    text-decoration: none;
-    transition: color 0.3s ease; /* Плавная анимация при наведении */
+.header-nav ul li {
+  margin: 0;
 }
-
-header nav ul li a:hover {
-    color: #F0FFFF; /* Изменение цвета при наведении */
+.header-nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.18em;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 12px;
+  transition: background 0.2s, color 0.2s, text-shadow 0.2s;
+  text-shadow: 0 1px 4px rgba(44, 62, 80, 0.18);
+  letter-spacing: 0.5px;
+}
+.header-nav ul li a:hover {
+  background: rgba(44,62,80,0.10);
+  color: #187a6e;
+  text-shadow: 0 2px 8px #4db6e2;
+}
+/* Прозрачность header при прокрутке */
+header.sticky .header-inner {
+  opacity: 0.85;
+  box-shadow: 0 2px 12px rgba(44, 62, 80, 0.13);
+}
+@media (max-width: 700px) {
+  .header-inner {
+    flex-direction: column;
+    height: auto;
+    padding: 16px 10px;
+  }
+  .logo {
+    margin: 0 0 12px 0;
+  }
 }
 
 main {
     padding: 20px 0;
+    flex: 1 0 auto;
 }
 
 h2 {
@@ -67,15 +116,36 @@ h2 {
 }
 
 .article-card {
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    transition: transform 0.3s ease; /* Плавная анимация при наведении */
+  background: #fafdff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.13);
+  padding: 24px 22px 20px 22px;
+  margin-bottom: 20px;
+  border-left: 5px solid #4db6e2;
+  transition: box-shadow 0.25s, transform 0.18s, border-left 0.18s;
+  position: relative;
 }
-
 .article-card:hover {
-    transform: translateY(-5px); /* Поднятие карточки при наведении */
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.18);
+  transform: translateY(-4px) scale(1.025);
+  border-left: 5px solid #3ec6b0;
+}
+.article-card h3 {
+  font-family: 'Playfair Display', 'Montserrat', serif;
+  font-size: 1.45em;
+  font-weight: 700;
+  color: #187a6e;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(44, 62, 80, 0.13), 0 1px 0 #fff;
+}
+.article-card p {
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: #444;
+  font-size: 1.05em;
+  margin: 8px 0 18px 0;
+  line-height: 1.6;
+  letter-spacing: 0.1px;
 }
 
 .button {
@@ -97,6 +167,7 @@ footer {
     color: white;
     text-align: center;
     padding: 20px 0;
+    flex-shrink: 0;
 }
 /* Добавьте стили для article-card */
 .article-card {
@@ -124,4 +195,73 @@ footer {
     padding: 10px 20px;
     cursor: pointer;
     text-decoration: none;
+}
+.section-block {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.07);
+  padding: 28px 24px;
+  margin-bottom: 32px;
+}
+.section-title {
+  font-size: 2em;
+  color: #4db6e2;
+  margin-bottom: 18px;
+  text-align: left;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.header-search {
+  display: flex;
+  align-items: center;
+  margin-left: 24px;
+  background: #fafdff;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.07);
+  padding: 2px 8px 2px 12px;
+  transition: box-shadow 0.2s;
+}
+.header-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 1em;
+  padding: 8px 6px 8px 0;
+  width: 120px;
+  transition: width 0.2s;
+}
+.header-search input:focus {
+  width: 180px;
+}
+.header-search button {
+  background: none;
+  border: none;
+  color: #3ec6b0;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 0.2s;
+}
+.header-search button:hover {
+  color: #187a6e;
+}
+.header-search input.typewriter-active::placeholder {
+  color: #187a6e;
+  opacity: 1;
+  font-style: italic;
+}
+.header-search input.typewriter-active {
+  caret-color: #3ec6b0;
+}
+.search-icon-img {
+  width: 1.35em;
+  height: 1.35em;
+  display: inline-block;
+  vertical-align: middle;
+  filter: drop-shadow(0 1px 2px rgba(44,62,80,0.10));
+  transition: filter 0.2s;
+}
+.header-search button:hover .search-icon-img {
+  filter: drop-shadow(0 2px 4px #3ec6b0);
 }
