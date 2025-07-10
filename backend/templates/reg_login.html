@@ -3,81 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход / Регистрация</title>
+    <title>Вход / Регистрация — WorkNest</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='reg_login.css') }}">
+    <style>
+        /* Оставляем только стили для облаков */
+        #clouds {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            left: 0; top: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .cloud {
+            width: 200px; height: 60px;
+            background: #fff;
+            border-radius: 200px;
+            position: absolute;
+            opacity: 0.7;
+        }
+        .cloud:before, .cloud:after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            width: 100px; height: 80px;
+            top: -15px; left: 10px;
+            border-radius: 100px;
+            transform: rotate(30deg);
+        }
+        .cloud:after {
+            width: 120px; height: 120px;
+            top: -55px; left: auto; right: 15px;
+        }
+        .x1 { left: 5vw; top: 10vh; animation: moveclouds 38s linear infinite; }
+        .x2 { left: 60vw; top: 15vh; transform: scale(0.6); opacity: 0.5; animation: moveclouds 55s linear infinite; }
+        .x3 { left: 30vw; top: 30vh; transform: scale(0.8); opacity: 0.6; animation: moveclouds 44s linear infinite; }
+        .x4 { left: 80vw; top: 40vh; transform: scale(0.75); opacity: 0.5; animation: moveclouds 50s linear infinite; }
+        .x5 { left: 10vw; top: 60vh; transform: scale(0.7); opacity: 0.4; animation: moveclouds 60s linear infinite; }
+        .x6 { left: 40vw; top: 70vh; transform: scale(0.5); opacity: 0.35; animation: moveclouds 65s linear infinite; }
+        .x7 { left: 75vw; top: 55vh; transform: scale(0.55); opacity: 0.3; animation: moveclouds 70s linear infinite; }
+        .x8 { left: 20vw; top: 80vh; transform: scale(0.4); opacity: 0.25; animation: moveclouds 75s linear infinite; }
+        .x9 { left: 85vw; top: 25vh; transform: scale(0.5); opacity: 0.3; animation: moveclouds 80s linear infinite; }
+        .x10 { left: 55vw; top: 5vh; transform: scale(0.45); opacity: 0.2; animation: moveclouds 90s linear infinite; }
+        @keyframes moveclouds {
+            0% { margin-left: 100vw; }
+            100% { margin-left: -120vw; }
+        }
+    </style>
 </head>
 <body>
-<div class="login-animated-bg">
-  <div class="rings">
-    <i></i><i></i><i></i>
-  </div>
-  <div class="login-center-group">
-    <div class="login-top-bar">
-      <a href="/" class="back-btn" title="На главную">&#8592;</a>
-      <div class="login-toggle-switch">
-        <input type="checkbox" id="toggle-auth" hidden onchange="toggleAuth()">
-        <label for="toggle-auth" class="toggle-label">
-          <span class="toggle-option login">Вход</span>
-          <span class="toggle-slider"></span>
-          <span class="toggle-option register">Регистрация</span>
-        </label>
-      </div>
+    <div id="clouds">
+        <div class="cloud x1"></div>
+        <div class="cloud x2"></div>
+        <div class="cloud x3"></div>
+        <div class="cloud x4"></div>
+        <div class="cloud x5"></div>
+        <div class="cloud x6"></div>
+        <div class="cloud x7"></div>
+        <div class="cloud x8"></div>
+        <div class="cloud x9"></div>
+        <div class="cloud x10"></div>
     </div>
-    <div class="login-flip-container" id="flip-container">
-      <!-- Toggle Switch -->
-      <div class="login-flip">
-        <!-- Форма входа -->
-        <div class="login-front">
-          <h2>Войти</h2>
-          <form method="POST" action="/login" class="login-form">
-            <div class="login-field">
-              <label for="login-username">Имя пользователя:</label>
-              <input type="text" id="login-username" name="username" required>
+    <header>
+        <div class="header-inner">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <h1>WorkNest</h1>
+            <nav class="header-nav">
+                <ul>
+                    <li><a href="/">Главная</a></li>
+                    <li><a href="/articles">Статьи</a></li>
+                    <li><a href="/wall">Стена</a></li>
+                </ul>
+            </nav>
+            <div class="header-user">
+              {% if current_user %}
+                <span class="header-username">{{ current_user.username }}</span>
+                <button class="header-burger" id="headerBurgerBtn" aria-label="Меню">
+                  <span class="burger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </span>
+                </button>
+                <div class="header-dropdown" id="headerDropdown">
+                  <a href="/profile">Профиль</a>
+                  <a href="/logout">Выйти</a>
+                </div>
+              {% else %}
+                <a href="/reg_login" class="header-login-link">Войти</a>
+              {% endif %}
             </div>
-            <div class="login-field">
-              <label for="login-password">Пароль:</label>
-              <input type="password" id="login-password" name="password" required>
-            </div>
-            <button type="submit" class="login-btn">Войти</button>
-          </form>
         </div>
-        <!-- Форма регистрации -->
-        <div class="login-back">
-          <h2>Регистрация</h2>
-          <form method="POST" action="/register" class="login-form">
-            <div class="login-field">
-              <label for="reg-username">Имя пользователя:</label>
-              <input type="text" id="reg-username" name="username" required>
+    </header>
+    <main>
+        <div class="login-animated-bg">
+            <div class="rings">
+                <i></i><i></i><i></i><i></i>
             </div>
-            <div class="login-field">
-              <label for="reg-email">Email:</label>
-              <input type="email" id="reg-email" name="email" required>
+            <div class="login-center-group">
+                <div class="login-top-bar">
+                    <a href="/" class="back-btn" title="На главную">&#8592;</a>
+                    <div class="login-toggle-switch">
+                        <input type="checkbox" id="toggle-auth" hidden onchange="toggleAuth()">
+                        <label for="toggle-auth" class="toggle-label">
+                            <span class="toggle-option login">Вход</span>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-option register">Регистрация</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="login-flip-container" id="flip-container">
+                    <div class="login-flip">
+                        <!-- Форма входа -->
+                        <div class="login-front">
+                            <h2>Вход</h2>
+                            <form method="POST" action="/reg_login" class="login-form">
+                                <div class="login-field">
+                                    <label for="login-username">Имя пользователя:</label>
+                                    <input type="text" id="login-username" name="username" required>
+                                </div>
+                                <div class="login-field">
+                                    <label for="login-password">Пароль:</label>
+                                    <input type="password" id="login-password" name="password" required>
+                                </div>
+                                <button type="submit" class="login-btn">Войти</button>
+                            </form>
+                        </div>
+                        <!-- Форма регистрации -->
+                        <div class="login-back">
+                            <h2>Регистрация</h2>
+                            <form method="POST" action="/register" class="login-form">
+                                <div class="login-field">
+                                    <label for="reg-username">Имя пользователя:</label>
+                                    <input type="text" id="reg-username" name="username" required>
+                                </div>
+                                <div class="login-field">
+                                    <label for="reg-email">Email:</label>
+                                    <input type="email" id="reg-email" name="email" required>
+                                </div>
+                                <div class="login-field">
+                                    <label for="reg-password">Пароль:</label>
+                                    <input type="password" id="reg-password" name="password" required>
+                                </div>
+                                <div class="login-field">
+                                    <label for="reg-password2">Подтвердите пароль:</label>
+                                    <input type="password" id="reg-password2" name="password2" required>
+                                </div>
+                                <button type="submit" class="login-btn">Зарегистрироваться</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="login-field">
-              <label for="reg-password">Пароль:</label>
-              <input type="password" id="reg-password" name="password" required>
-            </div>
-            <div class="login-field">
-              <label for="reg-password2">Подтвердите пароль:</label>
-              <input type="password" id="reg-password2" name="password2" required>
-            </div>
-            <button type="submit" class="login-btn">Зарегистрироваться</button>
-          </form>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-function toggleAuth() {
-  const flip = document.getElementById('flip-container');
-  const toggle = document.getElementById('toggle-auth');
-  if (toggle.checked) {
-    flip.classList.add('flipped');
-  } else {
-    flip.classList.remove('flipped');
-  }
-}
-</script>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 WorkNest</p>
+        </div>
+    </footer>
+    <script>
+    function toggleAuth() {
+        const flip = document.getElementById('flip-container');
+        const toggle = document.getElementById('toggle-auth');
+        if (toggle.checked) {
+            flip.classList.add('flipped');
+        } else {
+            flip.classList.remove('flipped');
+        }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const burger = document.getElementById('headerBurgerBtn');
+      const dropdown = document.getElementById('headerDropdown');
+      if (burger && dropdown) {
+        burger.onclick = function(e) {
+          e.stopPropagation();
+          dropdown.classList.toggle('active');
+        };
+        document.body.onclick = function() {
+          dropdown.classList.remove('active');
+        };
+      }
+    });
+    </script>
 </body>
 </html> 
