@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile_user.full_name or profile_user.username }} — WorkNest{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <!-- Заголовок публичного профиля -->
+    <div class="public-profile-header">
+        <div class="profile-cover">
+            <div class="profile-avatar-container">
+                {% if profile_user.avatar %}
+                    <img src="{{ url_for('static', filename=profile_user.avatar) }}" 
+                         alt="Аватар" 
+                         class="profile-avatar">
+                {% else %}
+                    <div class="profile-avatar-placeholder">
+                        <span>{{ profile_user.username[0].upper() }}</span>
+                    </div>
+                {% endif %}
+                
+                <!-- Статус онлайн -->
+                {% if profile_user.is_online %}
+                    <div class="online-indicator" title="Онлайн"></div>
+                {% endif %}
+            </div>
+            
+            <div class="profile-info">
+                <h1 class="profile-name">{{ profile_user.full_name or profile_user.username }}</h1>
+                <p class="profile-username">@{{ profile_user.username }}</p>
+                
+                {% if profile_user.degree and profile_user.show_degree %}
+                    <p class="profile-degree">{{ profile_user.degree }}</p>
+                {% endif %}
+                
+                {% if profile_user.organization and profile_user.show_organization %}
+                    <p class="profile-organization">{{ profile_user.organization }}</p>
+                {% endif %}
+                
+                {% if profile_user.location and profile_user.show_location %}
+                    <p class="profile-location">
+                        <i class="icon-location"></i>
+                        {{ profile_user.location }}
+                    </p>
+                {% endif %}
+                
+                {% if profile_user.bio and profile_user.show_bio %}
+                    <p class="profile-bio">{{ profile_user.bio }}</p>
+                {% endif %}
+                
+                <!-- Кнопки действий -->
+                <div class="profile-actions">
+                    {% if current_user and current_user.id != profile_user.id %}
+                        {% if is_following %}
+                            <button class="btn btn-secondary follow-btn" data-user-id="{{ profile_user.id }}" data-action="unfollow">
+                                Отписаться
+                            </button>
+                        {% else %}
+                            <button class="btn btn-primary follow-btn" data-user-id="{{ profile_user.id }}" data-action="follow">
+                                Подписаться
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if current_user and current_user.id == profile_user.id %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-secondary">
+                            Редактировать профиль
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистика профиля -->
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-number">{{ posts_count }}</div>
+                <div class="stat-label">Публикации</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ followers_count }}</div>
+                <div class="stat-label">Подписчики</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ following_count }}</div>
+                <div class="stat-label">Подписки</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ profile_views_count }}</div>
+                <div class="stat-label">Просмотры</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Основной контент профиля -->
+    <div class="public-profile-content">
+        <div class="profile-main">
+            <!-- Навигация по разделам -->
+            <div class="profile-nav">
+                <button class="profile-nav-tab active" data-tab="overview">Обзор</button>
+                <button class="profile-nav-tab" data-tab="posts">Публикации</button>
+                {% if skills %}
+                    <button class="profile-nav-tab" data-tab="skills">Навыки</button>
+                {% endif %}
+                {% if featured_projects %}
+                    <button class="profile-nav-tab" data-tab="projects">Проекты</button>
+                {% endif %}
+            </div>
+
+            <!-- Вкладка "Обзор" -->
+            <div class="profile-tab-content active" id="overview-tab">
+                <div class="profile-overview">
+                    <!-- Основная информация -->
+                    {% if profile_user.interests and profile_user.show_interests %}
+                        <div class="card">
+                            <h3 class="card-title">Интересы</h3>
+                            <p class="interests-text">{{ profile_user.interests }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Последние посты -->
+                    {% if recent_posts %}
+                        <div class="card">
+                            <h3 class="card-title">Последние публикации</h3>
+                            <div class="recent-posts">
+                                {% for post in recent_posts %}
+                                    <div class="recent-post">
+                                        <div class="post-content">{{ post.content[:100] }}{% if post.content|length > 100 %}...{% endif %}</div>
+                                        <div class="post-meta">
+                                            <span class="post-date">{{ post.created_at.strftime('%d.%m.%Y') }}</span>
+                                            <span class="post-likes">{{ post.likes|length }} лайков</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Избранные проекты -->
+                    {% if featured_projects %}
+                        <div class="card">
+                            <h3 class="card-title">Избранные проекты</h3>
+                            <div class="featured-projects">
+                                {% for project in featured_projects %}
+                                    <div class="project-card">
+                                        <h4 class="project-title">{{ project.title }}</h4>
+                                        {% if project.description %}
+                                            <p class="project-description">{{ project.description }}</p>
+                                        {% endif %}
+                                        <div class="project-links">
+                                            {% if project.project_url %}
+                                                <a href="{{ project.project_url }}" target="_blank" class="project-link">
+                                                    <i class="icon-external"></i> Проект
+                                                </a>
+                                            {% endif %}
+                                            {% if project.github_url %}
+                                                <a href="{{ project.github_url }}" target="_blank" class="project-link">
+                                                    <i class="icon-github"></i> GitHub
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        {% if project.technologies %}
+                                            <div class="project-tech">
+                                                {% for tech in project.technologies.split(',') %}
+                                                    <span class="tech-tag">{{ tech.strip() }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Вкладка "Публикации" -->
+            <div class="profile-tab-content" id="posts-tab">
+                <div class="profile-posts">
+                    {% if recent_posts %}
+                        {% for post in recent_posts %}
+                            <div class="post-item">
+                                <div class="post-content">{{ post.content }}</div>
+                                <div class="post-meta">
+                                    <span class="post-date">{{ post.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                                    <span class="post-likes">{{ post.likes|length }} лайков</span>
+                                    <span class="post-comments">{{ post.comments|length }} комментариев</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-posts">Пока нет публикаций</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Вкладка "Навыки" -->
+            {% if skills %}
+                <div class="profile-tab-content" id="skills-tab">
+                    <div class="profile-skills">
+                        {% for skill in skills %}
+                            <div class="skill-item">
+                                <div class="skill-name">{{ skill.skill_name }}</div>
+                                {% if skill.skill_level %}
+                                    <div class="skill-level skill-level-{{ skill.skill_level }}">
+                                        {{ {'beginner': 'Начинающий', 'intermediate': 'Средний', 'advanced': 'Продвинутый', 'expert': 'Эксперт'}[skill.skill_level] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Вкладка "Проекты" -->
+            {% if featured_projects %}
+                <div class="profile-tab-content" id="projects-tab">
+                    <div class="profile-projects">
+                        {% for project in featured_projects %}
+                            <div class="project-card-full">
+                                <h3 class="project-title">{{ project.title }}</h3>
+                                {% if project.description %}
+                                    <p class="project-description">{{ project.description }}</p>
+                                {% endif %}
+                                
+                                <div class="project-meta">
+                                    {% if project.start_date %}
+                                        <span class="project-date">{{ project.start_date }}{% if project.end_date %} - {{ project.end_date }}{% endif %}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="project-links">
+                                    {% if project.project_url %}
+                                        <a href="{{ project.project_url }}" target="_blank" class="btn btn-primary">
+                                            <i class="icon-external"></i> Посмотреть проект
+                                        </a>
+                                    {% endif %}
+                                    {% if project.github_url %}
+                                        <a href="{{ project.github_url }}" target="_blank" class="btn btn-secondary">
+                                            <i class="icon-github"></i> GitHub
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if project.technologies %}
+                                    <div class="project-tech">
+                                        {% for tech in project.technologies.split(',') %}
+                                            <span class="tech-tag">{{ tech.strip() }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="profile-sidebar">
+            <!-- Внешние ссылки -->
+            {% if external_links %}
+                <div class="card">
+                    <h3 class="card-title">Ссылки</h3>
+                    <div class="external-links">
+                        {% for link_type, links in external_links.items() %}
+                            {% for link in links %}
+                                <a href="{{ link.url }}" target="_blank" class="external-link">
+                                    <div class="link-icon">
+                                        {% if link_type == 'github' %}
+                                            <i class="icon-github"></i>
+                                        {% elif link_type == 'linkedin' %}
+                                            <i class="icon-linkedin"></i>
+                                        {% elif link_type == 'twitter' %}
+                                            <i class="icon-twitter"></i>
+                                        {% elif link_type == 'website' %}
+                                            <i class="icon-globe"></i>
+                                        {% elif link_type == 'portfolio' %}
+                                            <i class="icon-briefcase"></i>
+                                        {% else %}
+                                            <i class="icon-link"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="link-info">
+                                        <div class="link-title">{{ link.title or {'github': 'GitHub', 'linkedin': 'LinkedIn', 'twitter': 'Twitter', 'website': 'Сайт', 'portfolio': 'Портфолио'}[link_type] or link_type.title() }}</div>
+                                        <div class="link-url">{{ link.url }}</div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Контактная информация -->
+            <div class="card">
+                <h3 class="card-title">Контакты</h3>
+                <div class="contact-info">
+                    {% if profile_user.public_email and profile_user.show_public_email %}
+                        <div class="contact-item">
+                            <i class="icon-mail"></i>
+                            <a href="mailto:{{ profile_user.public_email }}">{{ profile_user.public_email }}</a>
+                        </div>
+                    {% endif %}
+                    {% if profile_user.telegram and profile_user.show_telegram %}
+                        <div class="contact-item">
+                            <i class="icon-telegram"></i>
+                            <a href="https://t.me/{{ profile_user.telegram }}" target="_blank">@{{ profile_user.telegram }}</a>
+                        </div>
+                    {% endif %}
+                    {% if profile_user.website and profile_user.show_website %}
+                        <div class="contact-item">
+                            <i class="icon-globe"></i>
+                            <a href="{{ profile_user.website }}" target="_blank">{{ profile_user.website }}</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Статистика активности -->
+            <div class="card">
+                <h3 class="card-title">Активность</h3>
+                <div class="activity-stats">
+                    <div class="activity-item">
+                        <div class="activity-number">{{ posts_count }}</div>
+                        <div class="activity-label">Публикаций</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-number">{{ profile_views_count }}</div>
+                        <div class="activity-label">Просмотров профиля</div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-number">{{ followers_count }}</div>
+                        <div class="activity-label">Подписчиков</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Переключение вкладок
+document.querySelectorAll('.profile-nav-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+        
+        // Убираем активный класс со всех вкладок и контента
+        document.querySelectorAll('.profile-nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.profile-tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Добавляем активный класс к выбранной вкладке
+        this.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+    });
+});
+
+// Подписка/отписка
+document.querySelectorAll('.follow-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const userId = this.dataset.userId;
+        const action = this.dataset.action;
+        
+        fetch(`/${action}/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (action === 'follow') {
+                    this.textContent = 'Отписаться';
+                    this.dataset.action = 'unfollow';
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-secondary');
+                } else {
+                    this.textContent = 'Подписаться';
+                    this.dataset.action = 'follow';
+                    this.classList.remove('btn-secondary');
+                    this.classList.add('btn-primary');
+                }
+            }
+        });
+    });
+});
+</script>
+
+<style>
+/* Стили для публичного профиля */
+.public-profile-header {
+    margin-bottom: 2rem;
+}
+
+.profile-cover {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    padding: 2rem;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.profile-avatar-container {
+    position: relative;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid #00e1d3;
+}
+
+.profile-avatar-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: #00e1d3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    font-weight: bold;
+    color: #121212;
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: #4CAF50;
+    border: 3px solid #121212;
+    border-radius: 50%;
+}
+
+.profile-name {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffffff;
+    margin: 0 0 0.5rem 0;
+}
+
+.profile-username {
+    font-size: 1.2rem;
+    color: #00e1d3;
+    margin: 0 0 0.5rem 0;
+}
+
+.profile-degree, .profile-organization {
+    color: #cccccc;
+    margin: 0.25rem 0;
+}
+
+.profile-location {
+    color: #999999;
+    margin: 0.5rem 0;
+}
+
+.profile-bio {
+    color: #cccccc;
+    margin: 1rem 0;
+    max-width: 400px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 2rem;
+    background: #1a1a1a;
+    padding: 1.5rem;
+    border-radius: 12px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00e1d3;
+}
+
+.stat-label {
+    color: #cccccc;
+    font-size: 0.9rem;
+}
+
+.public-profile-content {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+}
+
+.profile-nav {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #333333;
+}
+
+.profile-nav-tab {
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    color: #cccccc;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.profile-nav-tab:hover {
+    color: #00e1d3;
+}
+
+.profile-nav-tab.active {
+    color: #00e1d3;
+    border-bottom-color: #00e1d3;
+}
+
+.profile-tab-content {
+    display: none;
+}
+
+.profile-tab-content.active {
+    display: block;
+}
+
+.recent-posts {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.recent-post {
+    padding: 1rem;
+    background: #1a1a1a;
+    border-radius: 8px;
+    border-left: 3px solid #00e1d3;
+}
+
+.post-content {
+    color: #cccccc;
+    margin-bottom: 0.5rem;
+}
+
+.post-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+    color: #999999;
+}
+
+.featured-projects {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.project-card, .project-card-full {
+    background: #1a1a1a;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #333333;
+}
+
+.project-title {
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+}
+
+.project-description {
+    color: #cccccc;
+    margin-bottom: 1rem;
+}
+
+.project-links {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.project-link {
+    color: #00e1d3;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.project-link:hover {
+    text-decoration: underline;
+}
+
+.project-tech {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tech-tag {
+    background: #333333;
+    color: #cccccc;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.profile-skills {
+    display: grid;
+    gap: 1rem;
+}
+
+.skill-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #1a1a1a;
+    border-radius: 8px;
+}
+
+.skill-name {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.skill-level {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.skill-level-beginner { background: #4CAF50; color: white; }
+.skill-level-intermediate { background: #FF9800; color: white; }
+.skill-level-advanced { background: #2196F3; color: white; }
+.skill-level-expert { background: #9C27B0; color: white; }
+
+.external-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.external-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #1a1a1a;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #cccccc;
+    transition: background 0.3s ease;
+}
+
+.external-link:hover {
+    background: #333333;
+    color: #ffffff;
+}
+
+.link-icon {
+    font-size: 1.5rem;
+    color: #00e1d3;
+}
+
+.link-title {
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.link-url {
+    font-size: 0.8rem;
+    color: #999999;
+}
+
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #cccccc;
+}
+
+.contact-item i {
+    color: #00e1d3;
+}
+
+.contact-item a {
+    color: #cccccc;
+    text-decoration: none;
+}
+
+.contact-item a:hover {
+    color: #00e1d3;
+}
+
+.activity-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.activity-number {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00e1d3;
+}
+
+.activity-label {
+    color: #cccccc;
+}
+
+.no-posts {
+    text-align: center;
+    color: #999999;
+    font-style: italic;
+    padding: 2rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .public-profile-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-cover {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+    }
+    
+    .profile-nav {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %} 

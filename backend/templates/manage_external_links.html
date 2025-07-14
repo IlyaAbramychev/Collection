@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Управление ссылками — WorkNest{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="manage-links-header">
+        <h1>Управление внешними ссылками</h1>
+        <p>Добавьте ссылки на ваши профили в социальных сетях, портфолио и другие ресурсы</p>
+    </div>
+
+    <!-- Форма добавления новой ссылки -->
+    <div class="card">
+        <h2 class="card-title">Добавить новую ссылку</h2>
+        <form method="POST" class="add-link-form">
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-group">
+                <label for="link_type">Тип ссылки:</label>
+                <select name="link_type" id="link_type" required>
+                    <option value="">Выберите тип</option>
+                    {% for value, label in link_types.items() %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="url">URL:</label>
+                <input type="url" name="url" id="url" placeholder="https://example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="title">Пользовательское название (необязательно):</label>
+                <input type="text" name="title" id="title" placeholder="Мой сайт">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Добавить ссылку</button>
+        </form>
+    </div>
+
+    <!-- Список существующих ссылок -->
+    <div class="card">
+        <h2 class="card-title">Ваши ссылки</h2>
+        
+        {% if external_links %}
+            <div class="links-list">
+                {% for link in external_links %}
+                    <div class="link-item">
+                        <div class="link-info">
+                            <div class="link-icon">
+                                {% if link.link_type == 'github' %}
+                                    <i class="icon-github"></i>
+                                {% elif link.link_type == 'linkedin' %}
+                                    <i class="icon-linkedin"></i>
+                                {% elif link.link_type == 'twitter' %}
+                                    <i class="icon-twitter"></i>
+                                {% elif link.link_type == 'website' %}
+                                    <i class="icon-globe"></i>
+                                {% elif link.link_type == 'portfolio' %}
+                                    <i class="icon-briefcase"></i>
+                                {% else %}
+                                    <i class="icon-link"></i>
+                                {% endif %}
+                            </div>
+                            <div class="link-details">
+                                <div class="link-title">
+                                    {{ link.title or link_types[link.link_type] }}
+                                </div>
+                                <div class="link-url">{{ link.url }}</div>
+                                <div class="link-meta">
+                                    <span class="link-type">{{ link_types[link.link_type] }}</span>
+                                    <span class="link-status">
+                                        {% if link.is_public %}
+                                            <i class="icon-eye"></i> Публичная
+                                        {% else %}
+                                            <i class="icon-eye-off"></i> Скрытая
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="link-actions">
+                            <button class="btn btn-sm btn-secondary edit-link-btn" 
+                                    data-link-id="{{ link.id }}"
+                                    data-title="{{ link.title or '' }}"
+                                    data-is-public="{{ link.is_public }}">
+                                Редактировать
+                            </button>
+                            
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="link_id" value="{{ link.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Удалить эту ссылку?')">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-links">У вас пока нет внешних ссылок. Добавьте первую ссылку выше!</p>
+        {% endif %}
+    </div>
+
+    <div class="back-link">
+        <a href="{{ url_for('profile') }}" class="btn btn-secondary">← Вернуться к профилю</a>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования ссылки -->
+<div id="editLinkModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Редактировать ссылку</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <form method="POST" id="editLinkForm">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="link_id" id="edit_link_id">
+            
+            <div class="form-group">
+                <label for="edit_title">Пользовательское название:</label>
+                <input type="text" name="title" id="edit_title">
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_public" id="edit_is_public">
+                    Показывать в публичном профиле
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <button type="button" class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Управление модальным окном
+const modal = document.getElementById('editLinkModal');
+const editButtons = document.querySelectorAll('.edit-link-btn');
+const closeButtons = document.querySelectorAll('.close-modal');
+
+editButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const linkId = this.dataset.linkId;
+        const title = this.dataset.title;
+        const isPublic = this.dataset.isPublic === 'True';
+        
+        document.getElementById('edit_link_id').value = linkId;
+        document.getElementById('edit_title').value = title;
+        document.getElementById('edit_is_public').checked = isPublic;
+        
+        modal.style.display = 'block';
+    });
+});
+
+closeButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+});
+
+window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+// Предзаполнение URL в зависимости от типа ссылки
+document.getElementById('link_type').addEventListener('change', function() {
+    const urlInput = document.getElementById('url');
+    const type = this.value;
+    
+    const urlPrefixes = {
+        'github': 'https://github.com/',
+        'linkedin': 'https://linkedin.com/in/',
+        'twitter': 'https://twitter.com/',
+        'facebook': 'https://facebook.com/',
+        'instagram': 'https://instagram.com/',
+        'youtube': 'https://youtube.com/c/',
+        'telegram': 'https://t.me/',
+        'researchgate': 'https://researchgate.net/profile/',
+        'orcid': 'https://orcid.org/',
+        'scholar': 'https://scholar.google.com/citations?user='
+    };
+    
+    if (urlPrefixes[type]) {
+        urlInput.placeholder = urlPrefixes[type] + 'username';
+    } else {
+        urlInput.placeholder = 'https://example.com';
+    }
+});
+</script>
+
+<style>
+.manage-links-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.manage-links-header h1 {
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.manage-links-header p {
+    color: #cccccc;
+}
+
+.add-link-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: #cccccc;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    padding: 0.75rem;
+    border: 2px solid #333333;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #00e1d3;
+}
+
+.links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.link-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    border: 1px solid #333333;
+}
+
+.link-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.link-icon {
+    font-size: 1.5rem;
+    color: #00e1d3;
+    width: 40px;
+    text-align: center;
+}
+
+.link-details {
+    flex: 1;
+}
+
+.link-title {
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.link-url {
+    color: #cccccc;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.link-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: #999999;
+}
+
+.link-status {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.link-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.no-links {
+    text-align: center;
+    color: #999999;
+    font-style: italic;
+    padding: 2rem;
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid #333333;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #333333;
+}
+
+.modal-header h3 {
+    color: #ffffff;
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #cccccc;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #ffffff;
+}
+
+.modal form {
+    padding: 1.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #cccccc;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .link-item {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .link-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+}
+</style>
+{% endblock %} 

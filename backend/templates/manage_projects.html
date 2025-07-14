@@ -1,0 +1,611 @@
+{% extends "base.html" %}
+
+{% block title %}Управление проектами — WorkNest{% endblock %}
+
+{% block content %}
+<div class="fade-in">
+    <div class="manage-projects-header">
+        <h1>Управление проектами</h1>
+        <p>Добавьте ваши проекты, достижения и портфолио</p>
+    </div>
+
+    <!-- Форма добавления нового проекта -->
+    <div class="card">
+        <h2 class="card-title">Добавить новый проект</h2>
+        <form method="POST" class="add-project-form">
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-group">
+                <label for="title">Название проекта:</label>
+                <input type="text" name="title" id="title" placeholder="Мой веб-сайт" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Описание:</label>
+                <textarea name="description" id="description" rows="4" placeholder="Краткое описание проекта, использованные технологии, достигнутые результаты..."></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="project_url">Ссылка на проект:</label>
+                    <input type="url" name="project_url" id="project_url" placeholder="https://myproject.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="github_url">Ссылка на GitHub:</label>
+                    <input type="url" name="github_url" id="github_url" placeholder="https://github.com/username/project">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="technologies">Технологии:</label>
+                <input type="text" name="technologies" id="technologies" placeholder="Python, Django, PostgreSQL, React">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="start_date">Дата начала:</label>
+                    <input type="text" name="start_date" id="start_date" placeholder="Январь 2024">
+                </div>
+
+                <div class="form-group">
+                    <label for="end_date">Дата окончания:</label>
+                    <input type="text" name="end_date" id="end_date" placeholder="Март 2024 (или оставьте пустым для текущих)">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_featured" id="is_featured">
+                    Избранный проект (будет показан в публичном профиле)
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Добавить проект</button>
+        </form>
+    </div>
+
+    <!-- Список существующих проектов -->
+    <div class="card">
+        <h2 class="card-title">Ваши проекты</h2>
+        
+        {% if projects %}
+            <div class="projects-list">
+                {% for project in projects %}
+                    <div class="project-item">
+                        <div class="project-info">
+                            <div class="project-header">
+                                <h3 class="project-title">{{ project.title }}</h3>
+                                <div class="project-badges">
+                                    {% if project.is_featured %}
+                                        <span class="badge badge-featured">Избранный</span>
+                                    {% endif %}
+                                    {% if project.is_public %}
+                                        <span class="badge badge-public">Публичный</span>
+                                    {% else %}
+                                        <span class="badge badge-private">Скрытый</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if project.description %}
+                                <p class="project-description">{{ project.description }}</p>
+                            {% endif %}
+                            
+                            <div class="project-meta">
+                                {% if project.start_date %}
+                                    <span class="project-date">
+                                        <i class="icon-calendar"></i>
+                                        {{ project.start_date }}{% if project.end_date %} - {{ project.end_date }}{% endif %}
+                                    </span>
+                                {% endif %}
+                                
+                                {% if project.technologies %}
+                                    <div class="project-tech">
+                                        {% for tech in project.technologies.split(',') %}
+                                            <span class="tech-tag">{{ tech.strip() }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="project-links">
+                                {% if project.project_url %}
+                                    <a href="{{ project.project_url }}" target="_blank" class="project-link">
+                                        <i class="icon-external"></i> Проект
+                                    </a>
+                                {% endif %}
+                                {% if project.github_url %}
+                                    <a href="{{ project.github_url }}" target="_blank" class="project-link">
+                                        <i class="icon-github"></i> GitHub
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="project-actions">
+                            <button class="btn btn-sm btn-secondary edit-project-btn" 
+                                    data-project-id="{{ project.id }}"
+                                    data-is-featured="{{ project.is_featured }}"
+                                    data-is-public="{{ project.is_public }}">
+                                Редактировать
+                            </button>
+                            
+                            <form method="POST" style="display: inline;">
+                                <input type="hidden" name="action" value="delete">
+                                <input type="hidden" name="project_id" value="{{ project.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger" 
+                                        onclick="return confirm('Удалить этот проект?')">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-projects">У вас пока нет проектов. Добавьте первый проект выше!</p>
+        {% endif %}
+    </div>
+
+    <div class="back-link">
+        <a href="{{ url_for('profile') }}" class="btn btn-secondary">← Вернуться к профилю</a>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования проекта -->
+<div id="editProjectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Редактировать проект</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <form method="POST" id="editProjectForm">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="project_id" id="edit_project_id">
+            
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_featured" id="edit_is_featured">
+                    Избранный проект
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_public" id="edit_is_public">
+                    Показывать в публичном профиле
+                </label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+                <button type="button" class="btn btn-secondary close-modal">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Управление модальным окном
+const modal = document.getElementById('editProjectModal');
+const editButtons = document.querySelectorAll('.edit-project-btn');
+const closeButtons = document.querySelectorAll('.close-modal');
+
+editButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        const projectId = this.dataset.projectId;
+        const isFeatured = this.dataset.isFeatured === 'True';
+        const isPublic = this.dataset.isPublic === 'True';
+        
+        document.getElementById('edit_project_id').value = projectId;
+        document.getElementById('edit_is_featured').checked = isFeatured;
+        document.getElementById('edit_is_public').checked = isPublic;
+        
+        modal.style.display = 'block';
+    });
+});
+
+closeButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+});
+
+window.addEventListener('click', function(event) {
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+
+// Автодополнение для технологий
+const techInput = document.getElementById('technologies');
+const commonTechnologies = [
+    'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'C#', 'PHP', 'Ruby', 'Go', 'Rust',
+    'React', 'Vue.js', 'Angular', 'Node.js', 'Express', 'Django', 'Flask', 'Spring Boot',
+    'HTML', 'CSS', 'SCSS', 'Tailwind CSS', 'Bootstrap',
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite',
+    'Docker', 'Kubernetes', 'AWS', 'Azure', 'Google Cloud',
+    'Git', 'GitHub', 'GitLab', 'Jenkins', 'CI/CD',
+    'Machine Learning', 'TensorFlow', 'PyTorch', 'Scikit-learn'
+];
+
+techInput.addEventListener('input', function() {
+    const value = this.value;
+    const lastComma = value.lastIndexOf(',');
+    const currentTech = value.substring(lastComma + 1).trim().toLowerCase();
+    
+    if (currentTech.length > 1) {
+        const suggestions = commonTechnologies.filter(tech => 
+            tech.toLowerCase().includes(currentTech) && 
+            !value.toLowerCase().includes(tech.toLowerCase())
+        );
+        showTechSuggestions(suggestions, lastComma + 1);
+    } else {
+        hideTechSuggestions();
+    }
+});
+
+function showTechSuggestions(suggestions, insertPosition) {
+    let suggestionsList = document.getElementById('techSuggestions');
+    if (!suggestionsList) {
+        suggestionsList = document.createElement('div');
+        suggestionsList.id = 'techSuggestions';
+        suggestionsList.className = 'suggestions-list';
+        techInput.parentNode.appendChild(suggestionsList);
+    }
+    
+    suggestionsList.innerHTML = '';
+    suggestions.slice(0, 5).forEach(tech => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.textContent = tech;
+        item.addEventListener('click', function() {
+            const currentValue = techInput.value;
+            const beforeCursor = currentValue.substring(0, insertPosition);
+            const afterCursor = currentValue.substring(techInput.selectionStart);
+            techInput.value = beforeCursor + tech + ', ' + afterCursor;
+            hideTechSuggestions();
+        });
+        suggestionsList.appendChild(item);
+    });
+    
+    if (suggestions.length > 0) {
+        suggestionsList.style.display = 'block';
+    }
+}
+
+function hideTechSuggestions() {
+    const suggestionsList = document.getElementById('techSuggestions');
+    if (suggestionsList) {
+        suggestionsList.style.display = 'none';
+    }
+}
+
+// Скрыть подсказки при клике вне поля
+document.addEventListener('click', function(event) {
+    if (!techInput.contains(event.target)) {
+        hideTechSuggestions();
+    }
+});
+</script>
+
+<style>
+.manage-projects-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.manage-projects-header h1 {
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.manage-projects-header p {
+    color: #cccccc;
+}
+
+.add-project-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.form-group label {
+    color: #cccccc;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 2px solid #333333;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #ffffff;
+    font-size: 1rem;
+    resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #00e1d3;
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    display: none;
+}
+
+.suggestion-item {
+    padding: 0.75rem;
+    cursor: pointer;
+    color: #cccccc;
+    border-bottom: 1px solid #333333;
+}
+
+.suggestion-item:hover {
+    background: #333333;
+    color: #ffffff;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #cccccc;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.projects-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.project-item {
+    background: #1a1a1a;
+    border: 1px solid #333333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.project-info {
+    flex: 1;
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.project-title {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.project-badges {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.badge-featured {
+    background: #FF9800;
+    color: white;
+}
+
+.badge-public {
+    background: #4CAF50;
+    color: white;
+}
+
+.badge-private {
+    background: #757575;
+    color: white;
+}
+
+.project-description {
+    color: #cccccc;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.project-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.project-date {
+    color: #999999;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.project-tech {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.tech-tag {
+    background: #333333;
+    color: #cccccc;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.project-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.project-link {
+    color: #00e1d3;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.project-link:hover {
+    text-decoration: underline;
+}
+
+.project-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.no-projects {
+    text-align: center;
+    color: #999999;
+    font-style: italic;
+    padding: 2rem;
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+    background-color: #1a1a1a;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    border: 1px solid #333333;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #333333;
+}
+
+.modal-header h3 {
+    color: #ffffff;
+    margin: 0;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #cccccc;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: #ffffff;
+}
+
+.modal form {
+    padding: 1.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .project-item {
+        flex-direction: column;
+    }
+    
+    .project-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .project-actions {
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+    
+    .modal-content {
+        margin: 10% auto;
+        width: 95%;
+    }
+}
+</style>
+{% endblock %} 

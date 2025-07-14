@@ -1,193 +1,283 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Авторизация - WorkNest</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='reg_login.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/icon.ico') }}" type="image/x-icon">
-</head>
-<body>
-    <!-- Облачная анимация -->
-    <div id="clouds">
-        <div class="cloud x1"></div>
-        <div class="cloud x2"></div>
-        <div class="cloud x3"></div>
-        <div class="cloud x4"></div>
-        <div class="cloud x5"></div>
-        <div class="cloud x6"></div>
-        <div class="cloud x7"></div>
-        <div class="cloud x8"></div>
-        <div class="cloud x9"></div>
-        <div class="cloud x10"></div>
+{% extends "base.html" %}
+
+{% block title %}Авторизация - WorkNest{% endblock %}
+
+{% block content %}
+<div class="auth-container fade-in">
+    <div class="auth-card">
+        <!-- Заголовок -->
+        <div class="auth-header">
+            <h1>Добро пожаловать в WorkNest</h1>
+            <p>Войдите в свой аккаунт или создайте новый</p>
+        </div>
+
+        <!-- Переключатель между формами -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">Вход</button>
+            <button class="auth-tab" data-tab="register">Регистрация</button>
+        </div>
+
+        <!-- Форма входа -->
+        <div class="auth-form" id="login-form">
+            <form method="POST" action="/reg_login">
+                <div class="form-group">
+                    <label for="username" class="form-label">Имя пользователя</label>
+                    <input type="text" 
+                           id="username" 
+                           name="username" 
+                           class="form-input" 
+                           required 
+                           placeholder="Введите ваше имя пользователя">
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">Пароль</label>
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-input" 
+                           required 
+                           placeholder="Введите ваш пароль">
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-submit">
+                    Войти
+                </button>
+            </form>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div class="auth-form" id="register-form" style="display: none;">
+            <form method="POST" action="/register">
+                <div class="form-group">
+                    <label for="reg-username" class="form-label">Имя пользователя</label>
+                    <input type="text" 
+                           id="reg-username" 
+                           name="username" 
+                           class="form-input" 
+                           required 
+                           placeholder="Выберите имя пользователя">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email" class="form-label">Email</label>
+                    <input type="email" 
+                           id="reg-email" 
+                           name="email" 
+                           class="form-input" 
+                           required 
+                           placeholder="Введите ваш email">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password" class="form-label">Пароль</label>
+                    <input type="password" 
+                           id="reg-password" 
+                           name="password" 
+                           class="form-input" 
+                           required 
+                           placeholder="Создайте надежный пароль">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-full-name" class="form-label">Полное имя (необязательно)</label>
+                    <input type="text" 
+                           id="reg-full-name" 
+                           name="full_name" 
+                           class="form-input" 
+                           placeholder="Ваше полное имя">
+                </div>
+
+                <button type="submit" class="btn btn-primary auth-submit">
+                    Зарегистрироваться
+                </button>
+            </form>
+        </div>
+
+        <!-- Дополнительные ссылки -->
+        <div class="auth-footer">
+            <p>Нет аккаунта? <a href="#" class="auth-link" data-tab="register">Зарегистрируйтесь</a></p>
+            <p>Уже есть аккаунт? <a href="#" class="auth-link" data-tab="login">Войдите</a></p>
+        </div>
     </div>
+</div>
 
-    <!-- Header как на основных страницах -->
-    <header>
-        <div class="header-inner">
-            <img src="{{ url_for('static', filename='img/logo_new_png.png') }}" alt="Логотип" class="logo">
-            <h1>WorkNest</h1>
-            <nav class="header-nav">
-                <ul>
-                    <li><a href="/">Главная</a></li>
-                    <li><a href="/articles">Статьи</a></li>
-                    <li><a href="/wall">Моя стена</a></li>
-                    <li><a href="/feed">Общая лента</a></li>
-                </ul>
-            </nav>
-            <div class="header-user">
-                <a href="/" class="header-login-link">← Главная</a>
-            </div>
-        </div>
-    </header>
+<!-- Стили для страницы авторизации -->
+<style>
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 2rem 0;
+}
 
-    <!-- Основной контент -->
-    <main>
-        <div class="auth-container">
-            <!-- Кнопка переключения и стрелка назад -->
-            <div class="auth-header">
-                <a href="/" class="back-arrow">←</a>
-                <div class="ios-toggle-container">
-                    <div class="ios-toggle-switch" id="iosToggle" onclick="toggleAuthMode()">
-                        <div class="ios-toggle-option" id="loginOption">Вход</div>
-                        <div class="ios-toggle-option" id="registerOption">Регистрация</div>
-                        <div class="ios-toggle-slider" id="toggleSlider"></div>
-                    </div>
-                </div>
-            </div>
+.auth-card {
+    background-color: #1e1e1e;
+    border: 1px solid #2c2c2c;
+    border-radius: 16px;
+    padding: 2.5rem;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
 
-            <!-- Контейнер для переворачивающихся форм -->
-            <div class="form-flip-container">
-                <div class="form-flip-inner" id="formFlipInner">
-                    <!-- Форма входа -->
-                    <div class="auth-form form-front" id="loginForm">
-                        <div class="form-header">
-                            <h2>Добро пожаловать!</h2>
-                            <p>Войдите в свой аккаунт</p>
-                        </div>
-                        
-                        <form method="POST" action="{{ url_for('login') }}">
-                            <div class="form-field">
-                                <label for="username">Имя пользователя</label>
-                                <input type="text" id="username" name="username" required>
-                            </div>
-                            
-                            <div class="form-field">
-                                <label for="password">Пароль</label>
-                                <input type="password" id="password" name="password" required>
-                            </div>
-                            
-                            <button type="submit" class="auth-btn">Войти</button>
-                        </form>
-                        
-                        <div class="divider">
-                            <span>или войдите через</span>
-                        </div>
-                        
-                        <div class="social-buttons">
-                            <button class="social-btn google" type="button">Google</button>
-                            <button class="social-btn vk" type="button">VK</button>
-                            <button class="social-btn github" type="button">GitHub</button>
-                            <button class="social-btn mail" type="button">Mail.ru</button>
-                        </div>
-                    </div>
+.auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(45deg, #00e1d3, #00b8cc);
+    border-radius: 16px 16px 0 0;
+}
 
-                    <!-- Форма регистрации -->
-                    <div class="auth-form form-back" id="registerForm">
-                        <div class="form-header">
-                            <h2>Создать аккаунт</h2>
-                            <p>Присоединяйтесь к WorkNest</p>
-                        </div>
-                        
-                        <form method="POST" action="{{ url_for('register') }}">
-                            <div class="form-field">
-                                <label for="reg_username">Имя пользователя</label>
-                                <input type="text" id="reg_username" name="username" required>
-                            </div>
-                            
-                            <div class="form-field">
-                                <label for="reg_email">Email</label>
-                                <input type="email" id="reg_email" name="email" required>
-                            </div>
-                            
-                            <div class="form-field">
-                                <label for="reg_password">Пароль</label>
-                                <input type="password" id="reg_password" name="password" required>
-                            </div>
-                            
-                            <div class="form-field">
-                                <label for="reg_confirm_password">Подтвердите пароль</label>
-                                <input type="password" id="reg_confirm_password" name="confirm_password" required>
-                            </div>
-                            
-                            <button type="submit" class="auth-btn">Зарегистрироваться</button>
-                        </form>
-                        
-                        <div class="divider">
-                            <span>или зарегистрируйтесь через</span>
-                        </div>
-                        
-                        <div class="social-buttons">
-                            <button class="social-btn google" type="button">Google</button>
-                            <button class="social-btn vk" type="button">VK</button>
-                            <button class="social-btn github" type="button">GitHub</button>
-                            <button class="social-btn mail" type="button">Mail.ru</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
 
-    <footer>
-        <div class="container">
-            <p>© 2025 <span class="footer-brand">WorkNest</span></p>
-        </div>
-    </footer>
+.auth-header h1 {
+    font-size: 1.8rem;
+    color: #f0f0f0;
+    margin-bottom: 0.5rem;
+}
 
-    <!-- Flash messages -->
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="flash-messages">
-                {% for message in messages %}
-                    <div class="flash flash-info">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
+.auth-header p {
+    color: #888;
+    font-size: 1rem;
+}
 
-    <script>
-        let isLoginMode = true;
+.auth-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    padding: 4px;
+}
 
-        function toggleAuthMode() {
-            const formFlipInner = document.getElementById('formFlipInner');
-            const toggleSlider = document.getElementById('toggleSlider');
-            const loginOption = document.getElementById('loginOption');
-            const registerOption = document.getElementById('registerOption');
-            
-            if (isLoginMode) {
-                // Переключаемся на регистрацию
-                formFlipInner.style.transform = 'rotateY(180deg)';
-                toggleSlider.style.transform = 'translateX(calc(100% + 4px))';
-                loginOption.classList.remove('active');
-                registerOption.classList.add('active');
-                isLoginMode = false;
-            } else {
-                // Переключаемся на вход
-                formFlipInner.style.transform = 'rotateY(0deg)';
-                toggleSlider.style.transform = 'translateX(0%)';
-                loginOption.classList.add('active');
-                registerOption.classList.remove('active');
-                isLoginMode = true;
-            }
-        }
+.auth-tab {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
 
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            const loginOption = document.getElementById('loginOption');
-            loginOption.classList.add('active');
+.auth-tab.active {
+    background: linear-gradient(45deg, #00e1d3, #00b8cc);
+    color: #fff;
+}
+
+.auth-tab:hover:not(.active) {
+    color: #f0f0f0;
+    background-color: #3c3c3c;
+}
+
+.auth-form {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.auth-submit {
+    width: 100%;
+    padding: 1rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #2c2c2c;
+}
+
+.auth-footer p {
+    color: #888;
+    margin: 0.5rem 0;
+}
+
+.auth-link {
+    color: #00e1d3;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+    color: #00b8cc;
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 2rem 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.auth-tab');
+    const forms = document.querySelectorAll('.auth-form');
+    const authLinks = document.querySelectorAll('.auth-link');
+    
+    function switchTab(tabName) {
+        // Переключаем активные табы
+        tabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
-    </script>
-</body>
-</html> 
+        
+        // Переключаем формы
+        forms.forEach(form => {
+            form.style.display = form.id === `${tabName}-form` ? 'block' : 'none';
+        });
+        
+        // Обновляем ссылки в футере
+        authLinks.forEach(link => {
+            const isRegisterLink = link.dataset.tab === 'register';
+            const isLoginTab = tabName === 'login';
+            
+            if (isRegisterLink && isLoginTab) {
+                link.parentElement.style.display = 'block';
+            } else if (!isRegisterLink && !isLoginTab) {
+                link.parentElement.style.display = 'block';
+            } else {
+                link.parentElement.style.display = 'none';
+            }
+        });
+    }
+    
+    // Обработчики для табов
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
+        });
+    });
+    
+    // Обработчики для ссылок
+    authLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchTab(link.dataset.tab);
+        });
+    });
+    
+    // Инициализация
+    switchTab('login');
+});
+</script>
+{% endblock %} 

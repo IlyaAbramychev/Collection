@@ -5,112 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}WorkNest{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.ico') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='worknest.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <div class="page-bg"></div>
-    <div id="clouds">
-        <div class="cloud x1"></div>
-        <div class="cloud x2"></div>
-        <div class="cloud x3"></div>
-        <div class="cloud x4"></div>
-        <div class="cloud x5"></div>
-        <div class="cloud x6"></div>
-        <div class="cloud x7"></div>
-        <div class="cloud x8"></div>
-        <div class="cloud x9"></div>
-        <div class="cloud x10"></div>
-    </div>
-    <header>
-        <div class="header-inner">
-            <img src="{{ url_for('static', filename='img/logo_new_png.png') }}" alt="Логотип" class="logo">
-            <h1>WorkNest</h1>
-            <form class="header-search" action="/search" method="get" id="headerSearchForm">
-                <input type="text" name="q" placeholder="Поиск пользователей или #тегов..." aria-label="Поиск" id="headerSearchInput">
-                <button type="submit" title="Найти">
-                    <img src="{{ url_for('static', filename='img/browser_svg.svg') }}" alt="Поиск" class="search-icon-img">
-                </button>
-            </form>
-            <nav class="header-nav">
-                <ul>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-content">
+                <a href="/" class="logo">WorkNest</a>
+                <ul class="nav-links">
                     <li><a href="/">Главная</a></li>
                     <li><a href="/articles">Статьи</a></li>
-                    <li><a href="/wall">Моя стена</a></li>
-                    <li><a href="/feed">Общая лента</a></li>
+                    {% if current_user %}
+                        <li><a href="/wall">Моя стена</a></li>
+                        <li><a href="/feed">Лента</a></li>
+                    <li><a href="/personalized_feed">Моя лента</a></li>
+                        <li><a href="/articles/create">Создать статью</a></li>
+                        <li><a href="/search">Поиск</a></li>
+                        <li><a href="/profile">Профиль</a></li>
+                        <li><a href="/logout">Выход</a></li>
+                    {% else %}
+                        <li><a href="/search">Поиск</a></li>
+                        <li><a href="/reg_login">Вход</a></li>
+                    {% endif %}
                 </ul>
-            </nav>
-            <div class="header-user">
-              {% if current_user %}
-                <span class="header-username">{{ current_user.username }}</span>
-                <button class="header-burger" id="headerBurgerBtn" aria-label="Меню">
-                  <span class="burger-icon">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </span>
-                </button>
-                <div class="header-dropdown" id="headerDropdown">
-                  <a href="/profile">Профиль</a>
-                  <a href="/logout">Выйти</a>
-                </div>
-              {% else %}
-                <a href="/reg_login" class="header-login-link">Войти</a>
-              {% endif %}
             </div>
         </div>
-    </header>
-    <div class="app-bg">
-        {% block content %}{% endblock %}
-    </div>
-    <footer>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="main-content">
         <div class="container">
-            <p>© 2025 <span class="footer-brand">WorkNest</span></p>
+            <!-- Флеш-сообщения -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Контент страницы -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 WorkNest. Платформа для публикации и обсуждения работ.</p>
+            <p>Создано для студентов, специалистов и исследователей</p>
         </div>
     </footer>
+
+    <!-- Скрипты -->
     <script src="{{ url_for('static', filename='header-burger.js') }}"></script>
-    <script>
-        // Обработка поиска из header
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchForm = document.getElementById('headerSearchForm');
-            const searchInput = document.getElementById('headerSearchInput');
-            
-            if (searchForm && searchInput) {
-                searchForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const query = searchInput.value.trim();
-                    
-                    if (query.length >= 2) {
-                        // Если запрос начинается с #, это поиск по тегам
-                        if (query.startsWith('#')) {
-                            // Перенаправляем на общую ленту с поиском по тегам
-                            window.location.href = `/feed?q=${encodeURIComponent(query)}`;
-                        } else {
-                            // Иначе это поиск пользователей
-                            window.location.href = `/search?q=${encodeURIComponent(query)}`;
-                        }
-                    } else {
-                        // Если запрос короткий, показываем подсказку
-                        searchInput.placeholder = 'Введите минимум 2 символа...';
-                        setTimeout(() => {
-                            searchInput.placeholder = 'Поиск пользователей или #тегов...';
-                        }, 2000);
-                    }
-                });
-                
-                // Автозаполнение из URL параметров
-                const urlParams = new URLSearchParams(window.location.search);
-                const queryParam = urlParams.get('q');
-                if (queryParam) {
-                    searchInput.value = queryParam;
-                }
-            }
-        });
-    </script>
-    
-    <!-- Typewriter effect for search -->
+    <script src="{{ url_for('static', filename='like-toggle.js') }}"></script>
     <script src="{{ url_for('static', filename='search-typewriter.js') }}"></script>
-    
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

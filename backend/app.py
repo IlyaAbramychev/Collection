@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from models import db, User, Post, Comment, Like, Tag, CommentLike
+from models import db, User, Post, Comment, Like, Tag, CommentLike, Article, Category, Badge, Poll, PollVote, Bookmark, UserBadge, Notification, Report, TagSubscription, ActivityFeed, Reaction, UserExternalLink, UserProfileView, UserSkill, UserProject
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 from PIL import Image
@@ -93,7 +93,158 @@ def index():
 
 @app.route('/articles')
 def articles_page():
-    return render_template('articles.html')
+    """Страница со всеми статьями"""
+    user_id = session.get('user_id')
+    
+    # Получаем параметры фильтрации
+    category_id = request.args.get('category')
+    tag_name = request.args.get('tag')
+    author_id = request.args.get('author')
+    
+    # Базовый запрос опубликованных статей
+    query = Article.query.filter_by(is_published=True)
+    
+    # Применяем фильтры
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    if tag_name:
+        query = query.join(Article.tags).filter(Tag.name == tag_name)
+    if author_id:
+        query = query.filter_by(user_id=author_id)
+    
+    # Получаем статьи с сортировкой
+    articles = query.order_by(Article.created_at.desc()).all()
+    
+    # Загружаем дополнительные данные для каждой статьи
+    for article in articles:
+        article.author = User.query.get(article.user_id)
+        article.category = Category.query.get(article.category_id) if article.category_id else None
+        article.likes_count = Like.query.filter_by(article_id=article.id).count()
+        article.comments_count = Comment.query.filter_by(article_id=article.id).count()
+        article.liked_by_current = False
+        if user_id:
+            article.liked_by_current = Like.query.filter_by(article_id=article.id, user_id=user_id).first() is not None
+    
+    # Получаем категории для фильтра
+    categories = Category.query.all()
+    
+    # Получаем популярные теги
+    popular_tags = Tag.query.join(Article.tags).group_by(Tag.id).order_by(db.func.count(Article.id).desc()).limit(10).all()
+    
+    return render_template('articles.html', 
+                         articles=articles, 
+                         categories=categories,
+                         popular_tags=popular_tags,
+                         current_category=category_id,
+                         current_tag=tag_name,
+                         current_author=author_id)
+
+@app.route('/articles/create', methods=['GET', 'POST'])
+def create_article():
+    """Создание новой статьи"""
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Необходимо войти в аккаунт для создания статьи', 'warning')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        content = request.form.get('content', '').strip()
+        summary = request.form.get('summary', '').strip()
+        category_id = request.form.get('category_id')
+        is_published = request.form.get('is_published') == 'on'
+        
+        if not title or not content:
+            flash('Заголовок и содержание обязательны', 'danger')
+            return redirect(url_for('create_article'))
+        
+        # Создаем статью
+        article = Article(
+            user_id=user_id,
+            title=title,
+            content=content,
+            summary=summary,
+            category_id=int(category_id) if category_id else None,
+            is_published=is_published
+        )
+        
+        if is_published:
+            article.published_at = datetime.utcnow()
+        
+        # Обработка тегов
+        tags_input = request.form.get('tags', '').strip()
+        if tags_input:
+            tag_names = [tag.strip() for tag in tags_input.split(',') if tag.strip()]
+            tags = []
+            for tag_name in tag_names:
+                tag = Tag.query.filter_by(name=tag_name).first()
+                if not tag:
+                    tag = Tag(name=tag_name)
+                    db.session.add(tag)
+                tags.append(tag)
+            article.tags = tags
+        
+        # Вычисляем время чтения (примерно 200 слов в минуту)
+        word_count = len(content.split())
+        article.reading_time = max(1, word_count // 200)
+        
+        db.session.add(article)
+        db.session.commit()
+        
+        flash('Статья создана успешно!', 'success')
+        return redirect(url_for('article_detail', article_id=article.id))
+    
+    # GET запрос - показываем форму
+    categories = Category.query.all()
+    return render_template('create_article.html', categories=categories)
+
+@app.route('/articles/<int:article_id>')
+def article_detail(article_id):
+    """Детальная страница статьи"""
+    article = Article.query.get_or_404(article_id)
+    
+    # Проверяем, опубликована ли статья или это автор
+    user_id = session.get('user_id')
+    if not article.is_published and article.user_id != user_id:
+        flash('Статья не найдена', 'danger')
+        return redirect(url_for('articles_page'))
+    
+    # Увеличиваем счетчик просмотров
+    article.views_count += 1
+    db.session.commit()
+    
+    # Загружаем дополнительные данные
+    article.author = User.query.get(article.user_id)
+    article.category = Category.query.get(article.category_id) if article.category_id else None
+    article.likes_count = Like.query.filter_by(article_id=article.id).count()
+    article.liked_by_current = False
+    if user_id:
+        article.liked_by_current = Like.query.filter_by(article_id=article.id, user_id=user_id).first() is not None
+    
+    # Получаем комментарии
+    comments = Comment.query.filter_by(article_id=article.id, parent_id=None).order_by(Comment.created_at.asc()).all()
+    for comment in comments:
+        comment.author = User.query.get(comment.user_id)
+        comment.replies = Comment.query.filter_by(parent_id=comment.id).order_by(Comment.created_at.asc()).all()
+        for reply in comment.replies:
+            reply.author = User.query.get(reply.user_id)
+    
+    # Похожие статьи
+    similar_articles = []
+    if article.category_id:
+        similar_articles = Article.query.filter(
+            Article.category_id == article.category_id,
+            Article.id != article.id,
+            Article.is_published == True
+        ).order_by(Article.created_at.desc()).limit(3).all()
+        
+        for similar in similar_articles:
+            similar.author = User.query.get(similar.user_id)
+    
+    return render_template('article_detail.html', 
+                         article=article, 
+                         comments=comments,
+                         similar_articles=similar_articles)
 
 @app.route('/reg_login', methods=['GET', 'POST'])
 def login():
@@ -255,6 +406,261 @@ def upload_avatar():
         db.session.commit()
         flash('Аватар обновлён!', 'success')
     return redirect(url_for('profile'))
+
+# Новые маршруты для публичных профилей
+@app.route('/user/<username>')
+def public_profile(username):
+    """Публичный профиль пользователя"""
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        flash('Пользователь не найден', 'error')
+        return redirect(url_for('index'))
+    
+    # Добавляем просмотр профиля
+    current_user_id = session.get('user_id')
+    current_user = User.query.get(current_user_id) if current_user_id else None
+    viewer_ip = request.remote_addr
+    
+    user.add_profile_view(viewer_user=current_user, viewer_ip=viewer_ip)
+    
+    # Получаем данные профиля
+    external_links = user.get_external_links_by_type()
+    skills = user.get_public_skills()
+    featured_projects = user.get_featured_projects()
+    recent_posts = Post.query.filter_by(user_id=user.id).order_by(Post.created_at.desc()).limit(5).all()
+    
+    # Статистика
+    followers_count = len(user.followers)
+    following_count = len(user.following)
+    posts_count = len(user.posts)
+    profile_views_count = user.get_profile_views_count()
+    
+    # Проверяем, подписан ли текущий пользователь
+    is_following = False
+    if current_user and current_user.id != user.id:
+        is_following = current_user.is_following(user)
+    
+    return render_template('public_profile.html',
+                         profile_user=user,
+                         external_links=external_links,
+                         skills=skills,
+                         featured_projects=featured_projects,
+                         recent_posts=recent_posts,
+                         followers_count=followers_count,
+                         following_count=following_count,
+                         posts_count=posts_count,
+                         profile_views_count=profile_views_count,
+                         is_following=is_following,
+                         current_user=current_user)
+
+@app.route('/profile/external-links', methods=['GET', 'POST'])
+def manage_external_links():
+    """Управление внешними ссылками"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('register'))
+    user = User.query.get(user_id)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add':
+            link_type = request.form.get('link_type', '').strip()
+            url = request.form.get('url', '').strip()
+            title = request.form.get('title', '').strip()
+            
+            if link_type and url:
+                # Проверяем, что URL корректный
+                if not url.startswith(('http://', 'https://')):
+                    url = 'https://' + url
+                
+                new_link = UserExternalLink(
+                    user_id=user.id,
+                    link_type=link_type,
+                    url=url,
+                    title=title if title else None
+                )
+                db.session.add(new_link)
+                db.session.commit()
+                flash('Ссылка добавлена!', 'success')
+        
+        elif action == 'delete':
+            link_id = request.form.get('link_id')
+            if link_id:
+                link = UserExternalLink.query.filter_by(id=link_id, user_id=user.id).first()
+                if link:
+                    db.session.delete(link)
+                    db.session.commit()
+                    flash('Ссылка удалена!', 'success')
+        
+        elif action == 'update':
+            link_id = request.form.get('link_id')
+            title = request.form.get('title', '').strip()
+            is_public = 'is_public' in request.form
+            
+            if link_id:
+                link = UserExternalLink.query.filter_by(id=link_id, user_id=user.id).first()
+                if link:
+                    link.title = title if title else None
+                    link.is_public = is_public
+                    db.session.commit()
+                    flash('Ссылка обновлена!', 'success')
+        
+        return redirect(url_for('manage_external_links'))
+    
+    # GET запрос - показываем форму
+    external_links = UserExternalLink.query.filter_by(user_id=user.id).order_by(UserExternalLink.order_index, UserExternalLink.created_at).all()
+    
+    # Типы ссылок
+    link_types = {
+        'github': 'GitHub',
+        'linkedin': 'LinkedIn',
+        'twitter': 'Twitter',
+        'facebook': 'Facebook',
+        'instagram': 'Instagram',
+        'youtube': 'YouTube',
+        'telegram': 'Telegram',
+        'website': 'Личный сайт',
+        'portfolio': 'Портфолио',
+        'blog': 'Блог',
+        'researchgate': 'ResearchGate',
+        'orcid': 'ORCID',
+        'scholar': 'Google Scholar',
+        'other': 'Другое'
+    }
+    
+    return render_template('manage_external_links.html', 
+                         external_links=external_links,
+                         link_types=link_types)
+
+@app.route('/profile/skills', methods=['GET', 'POST'])
+def manage_skills():
+    """Управление навыками"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('register'))
+    user = User.query.get(user_id)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add':
+            skill_name = request.form.get('skill_name', '').strip()
+            skill_level = request.form.get('skill_level', '').strip()
+            
+            if skill_name:
+                new_skill = UserSkill(
+                    user_id=user.id,
+                    skill_name=skill_name,
+                    skill_level=skill_level if skill_level else None
+                )
+                db.session.add(new_skill)
+                db.session.commit()
+                flash('Навык добавлен!', 'success')
+        
+        elif action == 'delete':
+            skill_id = request.form.get('skill_id')
+            if skill_id:
+                skill = UserSkill.query.filter_by(id=skill_id, user_id=user.id).first()
+                if skill:
+                    db.session.delete(skill)
+                    db.session.commit()
+                    flash('Навык удален!', 'success')
+        
+        elif action == 'update':
+            skill_id = request.form.get('skill_id')
+            skill_level = request.form.get('skill_level', '').strip()
+            is_public = 'is_public' in request.form
+            
+            if skill_id:
+                skill = UserSkill.query.filter_by(id=skill_id, user_id=user.id).first()
+                if skill:
+                    skill.skill_level = skill_level if skill_level else None
+                    skill.is_public = is_public
+                    db.session.commit()
+                    flash('Навык обновлен!', 'success')
+        
+        return redirect(url_for('manage_skills'))
+    
+    # GET запрос
+    skills = UserSkill.query.filter_by(user_id=user.id).order_by(UserSkill.order_index, UserSkill.skill_name).all()
+    
+    skill_levels = {
+        'beginner': 'Начинающий',
+        'intermediate': 'Средний',
+        'advanced': 'Продвинутый',
+        'expert': 'Эксперт'
+    }
+    
+    return render_template('manage_skills.html', 
+                         skills=skills,
+                         skill_levels=skill_levels)
+
+@app.route('/profile/projects', methods=['GET', 'POST'])
+def manage_projects():
+    """Управление проектами"""
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('register'))
+    user = User.query.get(user_id)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add':
+            title = request.form.get('title', '').strip()
+            description = request.form.get('description', '').strip()
+            project_url = request.form.get('project_url', '').strip()
+            github_url = request.form.get('github_url', '').strip()
+            technologies = request.form.get('technologies', '').strip()
+            start_date = request.form.get('start_date', '').strip()
+            end_date = request.form.get('end_date', '').strip()
+            is_featured = 'is_featured' in request.form
+            
+            if title:
+                new_project = UserProject(
+                    user_id=user.id,
+                    title=title,
+                    description=description if description else None,
+                    project_url=project_url if project_url else None,
+                    github_url=github_url if github_url else None,
+                    technologies=technologies if technologies else None,
+                    start_date=start_date if start_date else None,
+                    end_date=end_date if end_date else None,
+                    is_featured=is_featured
+                )
+                db.session.add(new_project)
+                db.session.commit()
+                flash('Проект добавлен!', 'success')
+        
+        elif action == 'delete':
+            project_id = request.form.get('project_id')
+            if project_id:
+                project = UserProject.query.filter_by(id=project_id, user_id=user.id).first()
+                if project:
+                    db.session.delete(project)
+                    db.session.commit()
+                    flash('Проект удален!', 'success')
+        
+        elif action == 'update':
+            project_id = request.form.get('project_id')
+            is_featured = 'is_featured' in request.form
+            is_public = 'is_public' in request.form
+            
+            if project_id:
+                project = UserProject.query.filter_by(id=project_id, user_id=user.id).first()
+                if project:
+                    project.is_featured = is_featured
+                    project.is_public = is_public
+                    db.session.commit()
+                    flash('Проект обновлен!', 'success')
+        
+        return redirect(url_for('manage_projects'))
+    
+    # GET запрос
+    projects = UserProject.query.filter_by(user_id=user.id).order_by(UserProject.order_index, UserProject.created_at.desc()).all()
+    
+    return render_template('manage_projects.html', projects=projects)
 
 @app.route('/logout')
 def logout():
@@ -859,6 +1265,124 @@ def api_get_comments(post_id):
         })
     
     return jsonify({'comments': comments_data})
+
+# Новые роуты для подписок на теги и персонализированной ленты
+@app.route('/subscribe_tag/<int:tag_id>', methods=['POST'])
+def subscribe_tag(tag_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user = User.query.get(session['user_id'])
+    tag = Tag.query.get_or_404(tag_id)
+    
+    if user.subscribe_to_tag(tag):
+        db.session.commit()
+        # Добавляем активность
+        user.add_activity('subscribe', 'tag', tag.id)
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Подписка на тег "{tag.name}" оформлена'})
+    else:
+        return jsonify({'success': False, 'message': 'Уже подписаны на этот тег'})
+
+@app.route('/unsubscribe_tag/<int:tag_id>', methods=['POST'])
+def unsubscribe_tag(tag_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    user = User.query.get(session['user_id'])
+    tag = Tag.query.get_or_404(tag_id)
+    
+    if user.unsubscribe_from_tag(tag):
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Отписка от тега "{tag.name}" выполнена'})
+    else:
+        return jsonify({'success': False, 'message': 'Не подписаны на этот тег'})
+
+@app.route('/personalized_feed')
+def personalized_feed():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    offset = (page - 1) * per_page
+    
+    # Получаем персонализированную ленту
+    posts = user.get_personalized_feed(limit=per_page, offset=offset)
+    
+    # Получаем подписки пользователя для отображения
+    subscribed_tags = user.get_subscribed_tags()
+    
+    return render_template('personalized_feed.html', 
+                         posts=posts, 
+                         subscribed_tags=subscribed_tags,
+                         page=page)
+
+@app.route('/tag/<int:tag_id>')
+def tag_feed(tag_id):
+    """Лента постов по конкретному тегу"""
+    tag = Tag.query.get_or_404(tag_id)
+    
+    # Получаем посты с этим тегом
+    posts = Post.query.filter(
+        Post.tags.contains(tag),
+        Post.is_published == True,
+        Post.is_deleted == False
+    ).order_by(Post.created_at.desc()).limit(20).all()
+    
+    # Проверяем подписку на тег (если пользователь авторизован)
+    is_subscribed = False
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        is_subscribed = user.is_subscribed_to_tag(tag)
+    
+    return render_template('tag_feed.html', 
+                         tag=tag, 
+                         posts=posts, 
+                         is_subscribed=is_subscribed)
+
+@app.route('/api/popular_tags')
+def get_popular_tags():
+    """API для получения популярных тегов"""
+    # Получаем теги с количеством постов
+    popular_tags = db.session.query(Tag, db.func.count(Post.id).label('post_count'))\
+        .join(Post.tags)\
+        .join(Post, Post.id == Post.id)\
+        .filter(Post.is_published == True, Post.is_deleted == False)\
+        .group_by(Tag.id)\
+        .order_by(db.func.count(Post.id).desc())\
+        .limit(10).all()
+    
+    result = []
+    for tag, count in popular_tags:
+        result.append({
+            'id': tag.id,
+            'name': tag.name,
+            'color': tag.color,
+            'post_count': count
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/tag_suggestions')
+def get_tag_suggestions():
+    """API для автоподсказок тегов"""
+    query = request.args.get('q', '').strip()
+    if len(query) < 2:
+        return jsonify([])
+    
+    tags = Tag.query.filter(Tag.name.ilike(f'%{query}%')).limit(10).all()
+    
+    result = []
+    for tag in tags:
+        result.append({
+            'id': tag.id,
+            'name': tag.name,
+            'color': tag.color
+        })
+    
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)

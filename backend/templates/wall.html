@@ -1,662 +1,793 @@
 {% extends 'base.html' %}
+
+{% block title %}
+{% if is_global_wall %}
+Общая лента - WorkNest
+{% elif target_user and target_user.id != current_user.id %}
+Стена {{ target_user.username }} - WorkNest
+{% else %}
+Моя стена - WorkNest
+{% endif %}
+{% endblock %}
+
 {% block content %}
-<div class="wall-page" style="display:flex; align-items:flex-start; justify-content:space-between; gap:36px; max-width:100%; margin:0;">
-  <div class="wall-left" style="flex:1 1 60%; max-width:900px; display:flex; flex-direction:column; gap:18px; padding-bottom:20px;">
-    <!-- Верхняя панель -->
-    <div class="wall-topbar" style="background:rgba(255,255,255,0.8);border-radius:14px;padding:16px 18px 10px 18px;display:flex;align-items:center;gap:18px;box-shadow:0 2px 12px #3ec6b033;">
-      <div style="flex:1;">
+<div class="wall-container fade-in">
+    <!-- Заголовок страницы -->
+    <div class="wall-header">
+        <h1>
+            {% if is_global_wall %}
+                Общая лента
+            {% elif target_user and target_user.id != current_user.id %}
+                Стена {{ target_user.username }}
+            {% else %}
+                Моя стена
+            {% endif %}
+        </h1>
+        
         {% if is_global_wall %}
-          <h2 style="margin:0;color:#187a6e;font-size:1.35em;font-weight:700;">Общая лента</h2>
-        {% elif target_user and target_user.id != user.id %}
-          <h2 style="margin:0;color:#187a6e;font-size:1.35em;font-weight:700;">Стена {{ target_user.username }}</h2>
-        {% else %}
-          <h2 style="margin:0;color:#187a6e;font-size:1.35em;font-weight:700;">Моя стена</h2>
-        {% endif %}
-      </div>
-      {% if is_global_wall %}
-      <form method="get" action="{{ url_for('global_feed') }}" style="margin:0;position:relative;">
-        <input type="text" name="q" placeholder="Поиск по тегам..." value="{{ search_query or '' }}" style="border-radius:22px;padding:10px 38px 10px 16px;background:#fafdff;border:none;box-shadow:0 2px 8px #4db6e222;font-size:1.05em;width:200px;transition:box-shadow 0.18s;outline:none;">
-        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#4db6e2;font-size:1.25em;pointer-events:none;">
-          <svg width="20" height="20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7" stroke="#4db6e2" stroke-width="2"/><path d="M15.5 15.5L18 18" stroke="#4db6e2" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-      </form>
-      {% endif %}
-    </div>
-    {% if not is_global_wall and (not target_user or target_user.id == user.id) %}
-    <form method="POST" action="/wall" class="profile-edit-form"
-          enctype="multipart/form-data"
-          style="width:100%;max-width:900px;margin-bottom:18px;padding:0;background:transparent;box-shadow:none;">
-
-      <div style="display:flex;align-items:flex-start;gap:16px;background:#fff;border-radius:18px;
-                  padding:24px 24px 16px 24px;box-shadow:0 2px 16px #3ec6b033;">
-
-        <!-- аватар -->
-        <div style="flex:0 0 54px;">
-          <img src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}"
-              alt="Аватар" style="width:48px;height:48px;object-fit:cover;border-radius:50%;background:#fafdff;">
-        </div>
-
-        <!-- контент -->
-        <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
-
-          <!-- редактор -->
-          <textarea id="post-editor" name="content" placeholder="Что происходит?"></textarea>
-
-          <!-- изображение -->
-          <input type="file" name="image" id="post-image-input" accept="image/*" style="display:none;">
-          <div id="image-preview" style="display:none;margin:8px 0 0 0;"></div>
-
-          <!-- геопозиция -->
-          <input type="hidden" name="latitude" id="latitude">
-          <input type="hidden" name="longitude" id="longitude">
-
-          <!-- нижняя панель -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-            <div style="display:flex;gap:14px;align-items:center;">
-              <button type="button" id="image-upload-btn" style="background:none;border:none;padding:0;margin:0;cursor:pointer;">
-                <img src="{{ url_for('static', filename='img/image_mountain_picture_view_svg.svg') }}" alt="Картинка"
-                    style="width:22px;height:22px;opacity:0.85;">
-              </button>
-              <button type="button" onclick="getLocation()" title="Геоточка"
-                      style="background:none;border:none;padding:0;margin:0;cursor:pointer;">
-                <img src="{{ url_for('static', filename='img/geo_svg.svg') }}" alt="Маркер"
-                    style="width:22px;height:22px;opacity:0.85;">
-              </button>
-              <img src="{{ url_for('static', filename='img/browser_svg.svg') }}" alt="Глобус"
-                  style="width:22px;height:22px;cursor:pointer;opacity:0.85;">
+            <div class="wall-search">
+                <form method="get" action="{{ url_for('global_feed') }}">
+                    <input type="text" 
+                           name="q" 
+                           placeholder="Поиск по тегам..." 
+                           value="{{ search_query or '' }}"
+                           class="form-input"
+                           style="width: 300px;">
+                    <button type="submit" class="btn btn-outline">Найти</button>
+                </form>
             </div>
+        {% endif %}
+    </div>
 
-            <button type="submit" class="profile-edit-save"
-                    style="padding:8px 28px;border-radius:22px;font-weight:700;font-size:1.08em;
-                          background:linear-gradient(90deg,#3ec6b0 0%,#4db6e2 100%);
-                          color:#fff;box-shadow:0 2px 8px #3ec6b033;border:none;">
-              Опубликовать
-            </button>
-          </div>
-        </div>
-      </div>
-    </form>
-
+    <!-- Форма создания поста -->
+    {% if not is_global_wall and (not target_user or target_user.id == current_user.id) %}
+    <div class="card post-form-card">
+        <h3 class="card-title">Создать публикацию</h3>
+        <form method="POST" action="/wall" enctype="multipart/form-data" class="post-form">
+            <div class="form-group">
+                <textarea name="content" 
+                          class="form-input form-textarea" 
+                          placeholder="Поделитесь своими мыслями, исследованиями, открытиями..."
+                          required
+                          style="min-height: 120px;"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="image" class="form-label">Изображение (необязательно)</label>
+                    <input type="file" 
+                           id="image" 
+                           name="image" 
+                           class="form-input" 
+                           accept="image/*">
+                </div>
+                <div class="form-group">
+                    <label for="tags" class="form-label">Теги (через запятую)</label>
+                    <input type="text" 
+                           id="tags" 
+                           name="tags" 
+                           class="form-input" 
+                           placeholder="AI, машинное обучение, наука">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Местоположение (необязательно)</label>
+                <div class="location-input">
+                    <input type="hidden" name="latitude" id="latitude">
+                    <input type="hidden" name="longitude" id="longitude">
+                    <button type="button" class="btn btn-secondary" onclick="getLocation()">
+                        📍 Добавить местоположение
+                    </button>
+                    <span id="location-status" class="text-muted"></span>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Опубликовать</button>
+            </div>
+        </form>
+    </div>
     {% endif %}
+
     <!-- Список постов -->
-    {% for post in posts %}
-    <div class="wall-post" style="background:rgba(255,255,255,0.95);border-radius:14px;box-shadow:0 2px 12px #3ec6b033;padding:0 0 10px 0;margin-bottom:0;position:relative;">
-      <div style="display:flex;align-items:center;gap:12px;padding:18px 18px 0 18px;position:relative;">
-        <a href="{{ url_for('user_wall', username=post.user.username) }}" class="user-mini-card" data-user-id="{{ post.user.id }}" style="display:flex;align-items:center;gap:12px;cursor:pointer;text-decoration:none;">
-          <div style="width:48px;height:48px;border-radius:50%;background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-            <img src="{{ url_for('static', filename=post.user.avatar) if post.user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:48px;height:48px;object-fit:cover;border-radius:50%;background:#fafdff;">
-          </div>
-          <div style="display:flex;flex-direction:column;">
-            <div style="font-weight:700;color:#187a6e;font-size:1.08em;"><span class="comment-username">{{ post.user.username }}</span>{% if post.user.degree %}<span class="degree-badge degree-{{ post.user.degree|lower|replace(' ', '-')|trim }}">{{ post.user.degree }}</span>{% endif %}</div>
-          </div>
-        </a>
-        {% if user.id == post.user.id %}
-        <div class="post-menu-btn" style="margin-left:auto;position:absolute;right:12px;top:12px;">
-          <button onclick="togglePostMenu(this)" style="background:none;border:none;cursor:pointer;padding:6px 10px;font-size:22px;line-height:1;">⋯</button>
-          <div class="post-menu-dropdown" style="display:none;position:absolute;right:0;top:32px;background:#fff;border-radius:10px;box-shadow:0 4px 16px rgba(44,62,80,0.13);min-width:140px;z-index:10;flex-direction:column;padding:8px 0;">
-            <button class="post-menu-edit" data-post-id="{{ post.id }}" style="background:none;border:none;width:100%;text-align:left;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:1em;">
-              <span style="font-size:1.2em;display:inline-block;width:22px;text-align:center;">✏️</span> <span>Редактировать</span>
-            </button>
-            <button class="post-menu-pin" data-post-id="{{ post.id }}" style="background:none;border:none;width:100%;text-align:left;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:1em;">
-              <span style="font-size:1.2em;display:inline-block;width:22px;text-align:center;">📌</span> <span>{% if post.pinned %}Открепить{% else %}Закрепить{% endif %}</span>
-            </button>
-            <button class="post-menu-delete" data-post-id="{{ post.id }}" style="background:none;border:none;width:100%;text-align:left;padding:10px 18px;cursor:pointer;color:#e74c3c;display:flex;align-items:center;gap:10px;font-size:1em;">
-              <span style="font-size:1.2em;display:inline-block;width:22px;text-align:center;">🗑️</span> <span>Удалить</span>
-            </button>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-      <!-- mini-profile-dropbox удалён -->
-      <div style="margin:12px 18px 0 78px;white-space:pre-line;font-size:1.13em;">{{ post.content|hashtagify|safe }}</div>
-      {% if post.image_path %}
-      <div style="margin:10px 18px 0 78px;">
-        <img src="{{ url_for('static', filename=post.image_path) }}" alt="Изображение поста" style="max-width:320px;max-height:320px;border-radius:12px;box-shadow:0 2px 8px #3ec6b033;">
-      </div>
-      {% endif %}
-      {% if post.latitude and post.longitude %}
-      <div style="margin:8px 18px 0 78px;">
-        <a href="https://www.google.com/maps?q={{ post.latitude }},{{ post.longitude }}" target="_blank" style="color:#4db6e2;text-decoration:underline;font-size:0.98em;">Геоточка на карте</a>
-      </div>
-      {% endif %}
-      {% if post.tags %}
-      <div style="margin:4px 18px 0 78px;display:flex;gap:8px;flex-wrap:wrap;">
-        {% for tag in post.tags %}
-          <a href="/feed?q=%23{{ tag.name }}" class="hashtag" style="color:#4db6e2;text-decoration:none;font-weight:600;">#{{ tag.name }}</a>
-        {% endfor %}
-      </div>
-      {% endif %}
-      <div style="margin:10px 18px 0 78px;display:flex;gap:16px;align-items:center;justify-content:flex-end;">
-        <button class="like-btn" type="button" data-liked="{{ 'true' if post.liked_by_current else 'false' }}" data-post-id="{{ post.id }}" style="background:none;border:none;color:#3ec6b0;font-size:1.18em;cursor:pointer;display:flex;align-items:center;gap:8px;">
-          <img src="{{ url_for('static', filename='img/heart_svg.svg') }}" alt="Лайк" style="width:20px;height:20px;transition:filter 0.2s;{{ 'filter:invert(41%) sepia(94%) saturate(442%) hue-rotate(124deg) brightness(92%) contrast(92%);' if post.liked_by_current else '' }}">
-          <span class="like-count">{{ post.likes_count }}</span>
-        </button>
-        <button style="background:none;border:none;color:#4db6e2;font-size:1.18em;cursor:pointer;display:flex;align-items:center;gap:8px;"><img src="{{ url_for('static', filename='img/comment_svg.svg') }}" alt="Комментарий" style="width:20px;height:20px;"> {{ post.comments|length }}</button>
-      </div>
-      <div class="wall-comments" data-post-id="{{ post.id }}" style="margin:3px 18px 0 78px;background:transparent;box-shadow:none;border-radius:0;padding:0;">
-        <!-- Комментарии будут подгружаться и рендериться через JS -->
-      </div>
-    </div>
-    {% endfor %}
+    <div class="posts-container">
+        {% if posts %}
+            {% for post in posts %}
+                <article class="card post-card fade-in">
+                    <!-- Заголовок поста -->
+                    <div class="post-header">
+                        <div class="post-author">
+                            {% if post.user.avatar %}
+                                <img src="{{ url_for('static', filename=post.user.avatar) }}" 
+                                     alt="Аватар" 
+                                     class="post-avatar">
+                            {% else %}
+                                <div class="post-avatar-placeholder">
+                                    {{ post.user.username[0].upper() }}
+                                </div>
+                            {% endif %}
+                            <div class="post-author-info">
+                                <h4>
+                                    <a href="/user/{{ post.user.username }}" class="post-author-name">
+                                        {{ post.user.full_name or post.user.username }}
+                                    </a>
+                                </h4>
+                                <p class="post-meta">
+                                    @{{ post.user.username }} • {{ post.created_at.strftime('%d.%m.%Y в %H:%M') }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% if current_user and current_user.id == post.user.id %}
+                            <div class="post-actions-menu">
+                                <button class="btn btn-secondary post-menu-btn" onclick="togglePostMenu({{ post.id }})">
+                                    ⋮
+                                </button>
+                                <div class="post-menu" id="post-menu-{{ post.id }}">
+                                    <button onclick="editPost({{ post.id }})" class="post-menu-item">
+                                        ✏️ Редактировать
+                                    </button>
+                                    <button onclick="deletePost({{ post.id }})" class="post-menu-item delete">
+                                        🗑️ Удалить
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
 
-    <!-- Modal для мини-профиля пользователя удалён -->
-  </div>
-  <aside class="wall-right" style="flex:0 0 340px;display:flex;flex-direction:column;gap:28px;align-items:flex-end;margin-top:0;">
-    {% if is_global_wall %}
-    <!-- Профиль текущего пользователя на общей ленте -->
-    <div class="profile-card" id="profileCard" style="margin-top:0; position:relative;">
-      <div class="profile-avatar">
-        <img src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:120px;height:120px;object-fit:cover;border-radius:50%;background:#fff;">
-      </div>
-      <div class="profile-info">
-        <div class="profile-name">{{ user.username }}</div>
-        {% if user.full_name and user.show_full_name %}<div class="profile-fullname">{{ user.full_name }}{% if user.degree and user.show_degree %}<span class="degree-badge degree-{{ user.degree|lower|replace(' ', '-')|trim }}">{{ user.degree }}</span>{% endif %}</div>{% endif %}
-        {% if user.status and user.show_status %}<div class="profile-status">{{ user.status }}</div>{% endif %}
-        {% if user.bio and user.show_bio %}<div class="profile-bio">{{ user.bio }}</div>{% endif %}
-      </div>
-      <button id="profileDropBtn" class="profile-edit-btn" style="margin-top:10px;">Показать больше</button>
-      <div id="profileDropBox" class="enhanced-profile-dropdown" style="display:none;overflow:hidden;transition:all 0.3s ease;max-height:0;">
-        <div class="dropdown-content" style="background:rgba(255,255,255,0.95);border-radius:16px;margin-top:12px;padding:16px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.1);backdrop-filter:blur(10px);">
-          {% if user.organization and user.show_organization %}<div style="color:#666;margin-bottom:8px;"><strong>Организация:</strong> {{ user.organization }}</div>{% endif %}
-          {% if user.location and user.show_location %}<div style="color:#666;margin-bottom:8px;"><strong>Местоположение:</strong> {{ user.location }}</div>{% endif %}
-          {% if user.interests and user.show_interests %}<div style="color:#666;margin-bottom:8px;"><strong>Интересы:</strong> {{ user.interests }}</div>{% endif %}
-          {% if user.scholar_links and user.show_scholar_links %}<div style="color:#666;margin-bottom:8px;"><strong>Ссылки:</strong> {{ user.scholar_links }}</div>{% endif %}
-          {% if user.website and user.show_website %}<div style="color:#666;margin-bottom:8px;"><strong>Сайт:</strong> <a href="{{ user.website }}" target="_blank" style="color:#3ec6b0;">{{ user.website }}</a></div>{% endif %}
-          {% if user.public_email and user.show_public_email %}<div style="color:#666;margin-bottom:8px;"><strong>Email:</strong> <a href="mailto:{{ user.public_email }}" style="color:#3ec6b0;">{{ user.public_email }}</a></div>{% endif %}
-          {% if user.telegram and user.show_telegram %}<div style="color:#666;margin-bottom:8px;"><strong>Telegram:</strong> <a href="https://t.me/{{ user.telegram.replace('@', '') }}" target="_blank" style="color:#3ec6b0;">{{ user.telegram }}</a></div>{% endif %}
-        </div>
-      </div>
-    </div>
-    {% elif target_user and target_user.id != user.id %}
-    <!-- Профиль целевого пользователя на его стене -->
-    <div class="profile-card" id="profileCard" style="margin-top:0; position:relative;">
-      <div class="profile-avatar">
-        <img src="{{ url_for('static', filename=target_user.avatar) if target_user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:120px;height:120px;object-fit:cover;border-radius:50%;background:#fff;">
-      </div>
-      <div class="profile-info">
-        <div class="profile-name">{{ target_user.username }}</div>
-        {% if target_user.full_name and target_user.show_full_name %}<div class="profile-fullname">{{ target_user.full_name }}{% if target_user.degree and target_user.show_degree %}<span class="degree-badge degree-{{ target_user.degree|lower|replace(' ', '-')|trim }}">{{ target_user.degree }}</span>{% endif %}</div>{% endif %}
-        {% if target_user.status and target_user.show_status %}<div class="profile-status">{{ target_user.status }}</div>{% endif %}
-        {% if target_user.bio and target_user.show_bio %}<div class="profile-bio">{{ target_user.bio }}</div>{% endif %}
-      </div>
-      <!-- Статистика -->
-      <div class="profile-stats" style="display:flex;justify-content:center;gap:40px;margin:16px 0;padding:12px 0;border-top:1px solid rgba(255,255,255,0.2);border-bottom:1px solid rgba(255,255,255,0.2);">
-        <div style="text-align:center;">
-          <div style="font-size:1.2em;font-weight:700;color:#fff;">{{ posts|length }}</div>
-          <div style="font-size:0.8em;color:#eafaf1;">Постов</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:1.2em;font-weight:700;color:#fff;">{{ followers_count }}</div>
-          <div style="font-size:0.8em;color:#eafaf1;">Читателей</div>
-        </div>
-        <div style="text-align:center;">
-          <div style="font-size:1.2em;font-weight:700;color:#fff;">{{ following_count }}</div>
-          <div style="font-size:0.8em;color:#eafaf1;">Подписок</div>
-        </div>
-      </div>
+                    <!-- Содержимое поста -->
+                    <div class="post-content">
+                        <div class="post-text">
+                            {{ post.content|safe }}
+                        </div>
+                        
+                        {% if post.image_path %}
+                            <div class="post-image">
+                                <img src="{{ url_for('static', filename=post.image_path) }}" 
+                                     alt="Изображение к посту"
+                                     onclick="openImageModal(this.src)">
+                            </div>
+                        {% endif %}
+                        
+                        {% if post.latitude and post.longitude %}
+                            <div class="post-location">
+                                📍 Местоположение: {{ post.latitude }}, {{ post.longitude }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if post.tags %}
+                            <div class="post-tags">
+                                {% for tag in post.tags %}
+                                    <span class="post-tag">#{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
 
-      <!-- Кнопки действий -->
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        {% if is_following %}
-          <button onclick="unfollowUser('{{ target_user.username }}')" class="profile-follow-btn following" style="flex:1;background:#e74c3c;color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:600;cursor:pointer;transition:all 0.2s;">
-            Отписаться
-          </button>
+                    <!-- Действия с постом -->
+                    <div class="post-footer">
+                        <div class="post-stats">
+                            {% if current_user %}
+                                <button class="post-action like-btn {{ 'liked' if post.id in user_liked_posts else '' }}" 
+                                        data-post-id="{{ post.id }}">
+                                    <span class="like-count">{{ post.likes|length }}</span> ❤️
+                                </button>
+                            {% else %}
+                                <span class="post-stat">{{ post.likes|length }} ❤️</span>
+                            {% endif %}
+                            
+                            <button class="post-action comment-btn" onclick="toggleComments({{ post.id }})">
+                                {{ post.comments|length }} 💬
+                            </button>
+                            
+                            <span class="post-stat">{{ post.views or 0 }} 👁️</span>
+                        </div>
+                        
+                        {% if current_user %}
+                            <button class="btn btn-outline" onclick="toggleComments({{ post.id }})">
+                                Комментировать
+                            </button>
+                        {% endif %}
+                    </div>
+
+                    <!-- Комментарии -->
+                    <div class="comments-section" id="comments-{{ post.id }}" style="display: none;">
+                        {% if current_user %}
+                            <form class="comment-form" onsubmit="addComment(event, {{ post.id }})">
+                                <div class="comment-input-group">
+                                    <textarea placeholder="Написать комментарий..." 
+                                              class="form-input comment-input" 
+                                              rows="3"></textarea>
+                                    <button type="submit" class="btn btn-primary">Отправить</button>
+                                </div>
+                            </form>
+                        {% endif %}
+                        
+                        <div class="comments-list" id="comments-list-{{ post.id }}">
+                            <!-- Комментарии будут загружены через AJAX -->
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
         {% else %}
-          <button onclick="followUser('{{ target_user.username }}')" class="profile-follow-btn" style="flex:1;background:#fff;color:#3ec6b0;border:none;padding:10px 16px;border-radius:20px;font-weight:600;cursor:pointer;transition:all 0.2s;">
-            Подписаться
-          </button>
+            <!-- Пустое состояние -->
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <h3>
+                    {% if is_global_wall %}
+                        Пока нет публикаций в общей ленте
+                    {% elif target_user and target_user.id != current_user.id %}
+                        У {{ target_user.username }} пока нет публикаций
+                    {% else %}
+                        У вас пока нет публикаций
+                    {% endif %}
+                </h3>
+                <p>
+                    {% if not is_global_wall and (not target_user or target_user.id == current_user.id) %}
+                        Создайте свою первую публикацию и поделитесь с сообществом!
+                    {% else %}
+                        Станьте первым, кто опубликует что-то интересное!
+                    {% endif %}
+                </p>
+            </div>
         {% endif %}
-        <button id="profileDropBtn" class="profile-edit-btn" style="background:#fff;color:#3ec6b0;border:none;padding:10px 16px;border-radius:20px;font-weight:600;cursor:pointer;transition:all 0.2s;">
-          Подробнее
-        </button>
-      </div>
-
-      <!-- Расширенный выпадающий блок -->
-      <div id="profileDropBox" class="enhanced-profile-dropdown" style="display:none;overflow:hidden;transition:all 0.3s ease;max-height:0;">
-        <div class="dropdown-content" style="background:rgba(255,255,255,0.95);border-radius:16px;margin-top:12px;padding:0;box-shadow:0 4px 20px rgba(0,0,0,0.1);backdrop-filter:blur(10px);">
-          
-          <!-- Личная информация -->
-          <div class="dropdown-section" style="padding:16px 20px;border-bottom:1px solid rgba(62,198,176,0.1);">
-            <h4 style="color:#3ec6b0;margin:0 0 12px 0;font-size:1em;font-weight:600;">Личная информация</h4>
-            <div class="info-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.9em;">
-              {% if target_user.organization and target_user.show_organization %}
-                <div style="color:#666;"><strong>Организация:</strong><br>{{ target_user.organization }}</div>
-              {% endif %}
-              {% if target_user.location and target_user.show_location %}
-                <div style="color:#666;"><strong>Местоположение:</strong><br>{{ target_user.location }}</div>
-              {% endif %}
-              {% if target_user.interests and target_user.show_interests %}
-                <div style="color:#666;grid-column:1/-1;"><strong>Интересы:</strong><br>{{ target_user.interests }}</div>
-              {% endif %}
-            </div>
-          </div>
-
-          <!-- Контакты -->
-          {% if (target_user.public_email and target_user.show_public_email) or (target_user.telegram and target_user.show_telegram) or (target_user.website and target_user.show_website) %}
-          <div class="dropdown-section" style="padding:16px 20px;border-bottom:1px solid rgba(62,198,176,0.1);">
-            <h4 style="color:#3ec6b0;margin:0 0 12px 0;font-size:1em;font-weight:600;">Контакты</h4>
-            <div style="display:flex;flex-direction:column;gap:8px;font-size:0.9em;">
-              {% if target_user.public_email and target_user.show_public_email %}
-                <div style="color:#666;"><strong>Email:</strong> <a href="mailto:{{ target_user.public_email }}" style="color:#3ec6b0;">{{ target_user.public_email }}</a></div>
-              {% endif %}
-              {% if target_user.telegram and target_user.show_telegram %}
-                <div style="color:#666;"><strong>Telegram:</strong> <a href="https://t.me/{{ target_user.telegram.replace('@', '') }}" target="_blank" style="color:#3ec6b0;">{{ target_user.telegram }}</a></div>
-              {% endif %}
-              {% if target_user.website and target_user.show_website %}
-                <div style="color:#666;"><strong>Сайт:</strong> <a href="{{ target_user.website }}" target="_blank" style="color:#3ec6b0;">{{ target_user.website }}</a></div>
-              {% endif %}
-            </div>
-          </div>
-          {% endif %}
-
-          <!-- Читатели -->
-          <div class="dropdown-section" style="padding:16px 20px;border-bottom:1px solid rgba(62,198,176,0.1);">
-            <h4 style="color:#3ec6b0;margin:0 0 12px 0;font-size:1em;font-weight:600;">Читатели ({{ followers_count }})</h4>
-            <div class="followers-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;max-height:120px;overflow-y:auto;">
-              {% for follower in followers[:12] %}
-                <a href="/user/{{ follower.username }}" class="follower-card" style="display:flex;flex-direction:column;align-items:center;text-decoration:none;color:#666;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                  <img src="{{ url_for('static', filename=follower.avatar) if follower.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:40px;height:40px;border-radius:50%;margin-bottom:4px;object-fit:cover;">
-                  <div style="font-size:0.75em;text-align:center;font-weight:600;">{{ follower.username }}</div>
-                </a>
-              {% endfor %}
-            </div>
-            {% if followers_count > 12 %}
-              <div style="text-align:center;margin-top:8px;font-size:0.8em;color:#999;">и еще {{ followers_count - 12 }} читателей</div>
-            {% endif %}
-          </div>
-
-          <!-- Подписки -->
-          <div class="dropdown-section" style="padding:16px 20px;border-bottom-left-radius:16px;border-bottom-right-radius:16px;">
-            <h4 style="color:#3ec6b0;margin:0 0 12px 0;font-size:1em;font-weight:600;">Подписки ({{ following_count }})</h4>
-            <div class="following-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:12px;max-height:120px;overflow-y:auto;">
-              {% for followed in following[:12] %}
-                <a href="/user/{{ followed.username }}" class="following-card" style="display:flex;flex-direction:column;align-items:center;text-decoration:none;color:#666;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                  <img src="{{ url_for('static', filename=followed.avatar) if followed.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:40px;height:40px;border-radius:50%;margin-bottom:4px;object-fit:cover;">
-                  <div style="font-size:0.75em;text-align:center;font-weight:600;">{{ followed.username }}</div>
-                </a>
-              {% endfor %}
-            </div>
-            {% if following_count > 12 %}
-              <div style="text-align:center;margin-top:8px;font-size:0.8em;color:#999;">и еще {{ following_count - 12 }} подписок</div>
-            {% endif %}
-          </div>
-
-        </div>
-      </div>
     </div>
-    {% else %}
-    <!-- Профиль текущего пользователя на личной стене -->
-    <div class="profile-card" id="profileCard" style="margin-top:0; position:relative;">
-      <div class="profile-avatar">
-        <img src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:120px;height:120px;object-fit:cover;border-radius:50%;background:#fff;">
-      </div>
-      <div class="profile-info">
-        <div class="profile-name">{{ user.username }}</div>
-        {% if user.full_name and user.show_full_name %}<div class="profile-fullname">{{ user.full_name }}{% if user.degree and user.show_degree %}<span class="degree-badge degree-{{ user.degree|lower|replace(' ', '-')|trim }}">{{ user.degree }}</span>{% endif %}</div>{% endif %}
-        {% if user.status and user.show_status %}<div class="profile-status">{{ user.status }}</div>{% endif %}
-        {% if user.bio and user.show_bio %}<div class="profile-bio">{{ user.bio }}</div>{% endif %}
-      </div>
-      <button id="profileDropBtn" class="profile-edit-btn" style="margin-top:10px;">Показать больше</button>
-      <div id="profileDropBox" class="enhanced-profile-dropdown" style="display:none;overflow:hidden;transition:all 0.3s ease;max-height:0;">
-        <div class="dropdown-content" style="background:rgba(255,255,255,0.95);border-radius:16px;margin-top:12px;padding:16px 20px;box-shadow:0 4px 20px rgba(0,0,0,0.1);backdrop-filter:blur(10px);">
-          {% if user.organization and user.show_organization %}<div style="color:#666;margin-bottom:8px;"><strong>Организация:</strong> {{ user.organization }}</div>{% endif %}
-          {% if user.location and user.show_location %}<div style="color:#666;margin-bottom:8px;"><strong>Местоположение:</strong> {{ user.location }}</div>{% endif %}
-          {% if user.interests and user.show_interests %}<div style="color:#666;margin-bottom:8px;"><strong>Интересы:</strong> {{ user.interests }}</div>{% endif %}
-          {% if user.scholar_links and user.show_scholar_links %}<div style="color:#666;margin-bottom:8px;"><strong>Ссылки:</strong> {{ user.scholar_links }}</div>{% endif %}
-          {% if user.website and user.show_website %}<div style="color:#666;margin-bottom:8px;"><strong>Сайт:</strong> <a href="{{ user.website }}" target="_blank" style="color:#3ec6b0;">{{ user.website }}</a></div>{% endif %}
-          {% if user.public_email and user.show_public_email %}<div style="color:#666;margin-bottom:8px;"><strong>Email:</strong> <a href="mailto:{{ user.public_email }}" style="color:#3ec6b0;">{{ user.public_email }}</a></div>{% endif %}
-          {% if user.telegram and user.show_telegram %}<div style="color:#666;margin-bottom:8px;"><strong>Telegram:</strong> <a href="https://t.me/{{ user.telegram.replace('@', '') }}" target="_blank" style="color:#3ec6b0;">{{ user.telegram }}</a></div>{% endif %}
-        </div>
-      </div>
-    </div>
-    {% endif %}
-  </aside>
 </div>
 
+<!-- Модальное окно для изображений -->
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <div class="image-modal-content">
+        <img id="modalImage" src="" alt="Увеличенное изображение">
+        <button class="image-modal-close" onclick="closeImageModal()">×</button>
+    </div>
+</div>
+
+<!-- Стили для стены -->
 <style>
-.wall-comments {
-  margin: 3px 18px 0 78px;
-  background: transparent;
-  box-shadow: none;
-  border-radius: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.wall-container {
+    max-width: 800px;
+    margin: 0 auto;
 }
-.wall-comments .comment-reply-form {
-  background: #fafdff;
-  border-radius: 10px;
-  box-shadow: 0 1px 4px #3ec6b022;
-  padding: 8px 12px;
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
+
+.wall-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #2c2c2c;
 }
-.wall-comments .comment-reply-form input[type="text"] {
-  flex: 1;
-  border-radius: 8px;
-  padding: 6px 10px;
-  border: 1px solid #e0e0e0;
+
+.wall-header h1 {
+    color: #f0f0f0;
+    font-size: 2rem;
+    margin: 0;
 }
-.wall-comments .comment-reply-form button {
-  padding: 6px 16px;
-  border-radius: 8px;
-  background: linear-gradient(90deg,#3ec6b0 0%,#4db6e2 100%);
-  color: #fff;
-  border: none;
-  font-weight: 600;
+
+.wall-search {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
 }
-.degree-badge {
-  display: inline-block;
-  font-size: 0.92em;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 12px;
-  margin-left: 8px;
-  vertical-align: middle;
-  color: #fff;
+
+.post-form-card {
+    margin-bottom: 2rem;
 }
-.degree-badge-bsc { background: #3ec6b0 !important; }
-.degree-badge-msc { background: #4db6e2 !important; }
-.degree-badge-phd { background: #8e44ad !important; }
-.degree-badge-candidate { background: #e67e22 !important; }
-.degree-badge-doctor { background: #e74c3c !important; }
-.degree-badge-none { background: #bdbdbd !important; color: #fff !important; }
+
+.post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.location-input {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.posts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.post-card {
+    position: relative;
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.post-author {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.post-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00e1d3;
+}
+
+.post-avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #00e1d3, #00b8cc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.post-author-name {
+    color: #f0f0f0;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.post-author-name:hover {
+    color: #00e1d3;
+}
+
+.post-meta {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.post-actions-menu {
+    position: relative;
+}
+
+.post-menu-btn {
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.post-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #1e1e1e;
+    border: 1px solid #2c2c2c;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    min-width: 150px;
+    display: none;
+}
+
+.post-menu.show {
+    display: block;
+}
+
+.post-menu-item {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: #f0f0f0;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.post-menu-item:hover {
+    background-color: #2c2c2c;
+}
+
+.post-menu-item.delete {
+    color: #ff6b6b;
+}
+
+.post-content {
+    margin-bottom: 1rem;
+}
+
+.post-text {
+    color: #d0d0d0;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.post-image {
+    margin-bottom: 1rem;
+}
+
+.post-image img {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.post-image img:hover {
+    transform: scale(1.02);
+}
+
+.post-location {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.post-tag {
+    background: linear-gradient(45deg, #00e1d3, #00b8cc);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.post-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #2c2c2c;
+}
+
+.post-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.post-action {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.post-action:hover {
+    background-color: #2c2c2c;
+    color: #f0f0f0;
+}
+
+.like-btn.liked {
+    color: #ff6b6b;
+}
+
+.post-stat {
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.comments-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #2c2c2c;
+}
+
+.comment-form {
+    margin-bottom: 1rem;
+}
+
+.comment-input-group {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.comment-input {
+    flex: 1;
+    resize: vertical;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    color: #f0f0f0;
+    margin-bottom: 1rem;
+}
+
+.image-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.image-modal.show {
+    display: flex;
+}
+
+.image-modal-content {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.image-modal-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.image-modal-close {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .wall-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .wall-search {
+        justify-content: center;
+    }
+    
+    .post-author {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .post-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .comment-input-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
-  <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js"></script>
-
-  <script src="{{ url_for('static', filename='like-toggle.js') }}"></script>
-  <script src="{{ url_for('static', filename='comment-tree.js') }}"></script>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      tinymce.init({
-        selector: '#post-editor',
-        menubar: false,
-        language: 'ru',
-        plugins: 'lists link image autoresize',
-        toolbar: 'bold italic underline | bullist numlist | link image | undo redo',
-        branding: false,
-        height: 200,
-        // картинка как base64-превью; позже можно настроить загрузку на сервер
-        images_upload_handler: (blobInfo, success) => {
-          success('data:' + blobInfo.blob().type + ';base64,' + blobInfo.base64());
-        }
-      });
-    });
-  </script>
+<script>
+// Получение местоположения
+function getLocation() {
+    const status = document.getElementById('location-status');
     
-  <script>
-    window.currentUserId = {{ current_user.id if current_user else 'null' }};
-    function togglePostMenu(btn) {
-      const dropdown = btn.nextElementSibling;
-      document.querySelectorAll('.post-menu-dropdown').forEach(el => {
-        if (el !== dropdown) el.style.display = 'none';
-      });
-      dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-      dropdown.style.flexDirection = 'column';
+    if (navigator.geolocation) {
+        status.textContent = 'Получение местоположения...';
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitude').value = position.coords.latitude;
+                document.getElementById('longitude').value = position.coords.longitude;
+                status.textContent = '✓ Местоположение добавлено';
+                status.style.color = '#00e1d3';
+            },
+            function(error) {
+                status.textContent = 'Ошибка получения местоположения';
+                status.style.color = '#ff6b6b';
+            }
+        );
+    } else {
+        status.textContent = 'Геолокация не поддерживается';
+        status.style.color = '#ff6b6b';
     }
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.post-menu-btn')) {
-        document.querySelectorAll('.post-menu-dropdown').forEach(el => el.style.display = 'none');
-      }
+}
+
+// Переключение меню поста
+function togglePostMenu(postId) {
+    const menu = document.getElementById(`post-menu-${postId}`);
+    menu.classList.toggle('show');
+}
+
+// Закрытие меню при клике вне его
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.post-actions-menu')) {
+        document.querySelectorAll('.post-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+
+// Лайки
+document.addEventListener('DOMContentLoaded', function() {
+    const likeButtons = document.querySelectorAll('.like-btn');
+    
+    likeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const postId = this.dataset.postId;
+            const likeCount = this.querySelector('.like-count');
+            
+            fetch(`/api/like/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    likeCount.textContent = data.likes_count;
+                    this.classList.toggle('liked', data.liked);
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        });
     });
-    // Клик по иконке открывает выбор файла
-    document.addEventListener('DOMContentLoaded', function() {
-      const imageBtn = document.getElementById('image-upload-btn');
-      const imageInput = document.getElementById('post-image-input');
-      const preview = document.getElementById('image-preview');
-      if (imageBtn && imageInput) {
-        imageBtn.addEventListener('click', function() {
-          imageInput.click();
+});
+
+// Комментарии
+function toggleComments(postId) {
+    const commentsSection = document.getElementById(`comments-${postId}`);
+    const commentsList = document.getElementById(`comments-list-${postId}`);
+    
+    if (commentsSection.style.display === 'none') {
+        commentsSection.style.display = 'block';
+        loadComments(postId);
+    } else {
+        commentsSection.style.display = 'none';
+    }
+}
+
+function loadComments(postId) {
+    fetch(`/api/comments/${postId}`)
+        .then(response => response.json())
+        .then(data => {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            commentsList.innerHTML = '';
+            
+            data.comments.forEach(comment => {
+                const commentElement = createCommentElement(comment);
+                commentsList.appendChild(commentElement);
+            });
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки комментариев:', error);
         });
-        imageInput.addEventListener('change', function() {
-          if (imageInput.files && imageInput.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-              preview.innerHTML = `<img src='${e.target.result}' style='max-width:120px;max-height:120px;border-radius:10px;box-shadow:0 2px 8px #3ec6b033;'>`;
-              preview.style.display = 'block';
-            };
-            reader.readAsDataURL(imageInput.files[0]);
-          } else {
-            preview.innerHTML = '';
-            preview.style.display = 'none';
-          }
-        });
-      }
-      // --- ENHANCED DROPBOX в profile-card справа ---
-      var dropBtn = document.getElementById('profileDropBtn');
-      var dropBox = document.getElementById('profileDropBox');
-      if (dropBtn && dropBox) {
-        dropBtn.addEventListener('click', function() {
-          const content = dropBox.querySelector('.dropdown-content');
-          
-          if (dropBox.style.display === 'block') {
-            // Скрываем
-            dropBox.style.maxHeight = '0';
-            setTimeout(() => {
-              dropBox.style.display = 'none';
-            }, 300);
-            dropBtn.textContent = 'Подробнее';
-          } else {
-            // Показываем
-            dropBox.style.display = 'block';
-            dropBox.style.maxHeight = '0';
-            setTimeout(() => {
-              dropBox.style.maxHeight = content.scrollHeight + 'px';
-            }, 10);
-            dropBtn.textContent = 'Скрыть';
-          }
-        });
-      }
+}
+
+function addComment(event, postId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const textarea = form.querySelector('.comment-input');
+    const content = textarea.value.trim();
+    
+    if (!content) return;
+    
+    fetch(`/api/comment/${postId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            textarea.value = '';
+            loadComments(postId);
+            
+            // Обновляем счетчик комментариев
+            const commentBtn = document.querySelector(`[onclick="toggleComments(${postId})"]`);
+            if (commentBtn) {
+                commentBtn.innerHTML = `${data.comments_count} 💬`;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка добавления комментария:', error);
     });
-    // --- Удаление поста ---
-    document.querySelectorAll('.post-menu-delete').forEach(function(btn) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const postId = btn.id.replace('delete-post-', '');
-        if (confirm('Удалить пост?')) {
-          fetch('/wall/delete', {
+}
+
+function createCommentElement(comment) {
+    const div = document.createElement('div');
+    div.className = 'comment-item';
+    div.style.cssText = `
+        background: #2c2c2c;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    `;
+    
+    div.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <strong style="color: #00e1d3;">${comment.user.username}</strong>
+            <span style="color: #888; font-size: 0.8rem;">${comment.created_at}</span>
+        </div>
+        <div style="color: #d0d0d0;">${comment.content}</div>
+    `;
+    
+    return div;
+}
+
+// Модальное окно для изображений
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    
+    modalImage.src = src;
+    modal.classList.add('show');
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.classList.remove('show');
+}
+
+// Редактирование и удаление постов
+function editPost(postId) {
+    // Реализация редактирования поста
+    console.log('Редактирование поста:', postId);
+}
+
+function deletePost(postId) {
+    if (confirm('Вы уверены, что хотите удалить этот пост?')) {
+        fetch(`/wall/delete`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'X-Requested-With': 'XMLHttpRequest'
+                'Content-Type': 'application/json',
             },
-            body: 'post_id=' + encodeURIComponent(postId)
-          })
-          .then(r => r.json())
-          .then(data => {
+            body: JSON.stringify({ post_id: postId })
+        })
+        .then(response => response.json())
+        .then(data => {
             if (data.success) {
-              // Удалить пост из DOM
-              btn.closest('.wall-post').remove();
+                location.reload();
             } else {
-              alert('Ошибка: ' + (data.error || 'Не удалось удалить пост.'));
+                alert('Ошибка при удалении поста');
             }
-          })
-          .catch(() => alert('Ошибка при удалении поста.'));
-        }
-      });
-    });
-
-    function getLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(pos) {
-          document.getElementById('latitude').value = pos.coords.latitude;
-          document.getElementById('longitude').value = pos.coords.longitude;
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при удалении поста');
         });
-      } else {
-        alert('Геолокация не поддерживается вашим браузером.');
-      }
     }
-
-    // --- Инлайн-редактирование поста ---
-    document.addEventListener('DOMContentLoaded', function() {
-      document.querySelectorAll('.post-menu-edit').forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          const postElem = btn.closest('.wall-post');
-          const contentElem = postElem.querySelector('[style*="white-space:pre-line"]');
-          const imageElem = postElem.querySelector('img[alt="Изображение поста"]');
-          const geoElem = postElem.querySelector('a[href*="maps"]');
-          const postId = btn.closest('.wall-post').querySelector('.post-menu-delete').id.replace('delete-post-', '');
-          // Сохраняем старое содержимое
-          if (postElem.querySelector('.edit-post-form')) return;
-          const oldContent = contentElem ? contentElem.textContent : '';
-          const oldImage = imageElem ? imageElem.src : '';
-          // Создаём форму
-          let form = document.createElement('form');
-          form.className = 'edit-post-form';
-          form.enctype = 'multipart/form-data';
-          form.style = 'margin:12px 18px 0 78px;display:flex;flex-direction:column;gap:10px;';
-          form.innerHTML = `
-            <div id="editor-toolbar">
-              <span class="ql-formats">
-                <button class="ql-bold"></button>
-                <button class="ql-italic"></button>
-                <button class="ql-underline"></button>
-              </span>
-              <span class="ql-formats">
-                <button class="ql-list" value="ordered"></button>
-                <button class="ql-list" value="bullet"></button>
-              </span>
-              <span class="ql-formats">
-                <button class="ql-link"></button>
-                <button class="ql-image"></button>
-              </span>
-            </div>
-
-            <div id="postEditor" style="min-height:120px;"></div>
-
-            <textarea name="content" id="newPostHidden" hidden></textarea>
-            <div style='display:flex;align-items:center;gap:12px;'>
-              <input type="file" name="image" accept="image/*" id="edit-image-input-${postId}" style="display:none;">
-              <button type="button" class="edit-image-btn" style="background:none;border:none;cursor:pointer;" title="Заменить картинку">
-                <img src="/static/img/image_mountain_picture_view_svg.svg" style="width:22px;height:22px;opacity:0.85;">
-              </button>
-              <label style="display:flex;align-items:center;gap:6px;">
-                <input type="checkbox" name="remove_image" value="1" class="remove-image-checkbox"> Удалить картинку
-              </label>
-              <span class="edit-image-preview">${oldImage ? `<img src='${oldImage}' style='max-width:80px;max-height:80px;border-radius:8px;'>` : ''}</span>
-            </div>
-            <div style='display:flex;gap:10px;'>
-              <button type="submit" class="profile-edit-save" style="padding:6px 22px;border-radius:18px;font-weight:700;font-size:1em;background:linear-gradient(90deg,#3ec6b0 0%,#4db6e2 100%);color:#fff;border:none;">Сохранить</button>
-              <button type="button" class="edit-cancel-btn" style="padding:6px 18px;border-radius:18px;font-size:1em;background:#eee;color:#444;border:none;">Отмена</button>
-            </div>
-          `;
-          // Вставляем форму вместо текста
-          if (contentElem) contentElem.style.display = 'none';
-          if (imageElem) imageElem.style.display = 'none';
-          postElem.insertBefore(form, postElem.querySelector('.wall-comments'));
-          // Клик по иконке — выбор файла
-          form.querySelector('.edit-image-btn').onclick = function() {
-            form.querySelector(`#edit-image-input-${postId}`).click();
-          };
-          // Предпросмотр новой картинки
-          form.querySelector(`#edit-image-input-${postId}`).onchange = function(e) {
-            const preview = form.querySelector('.edit-image-preview');
-            if (e.target.files && e.target.files[0]) {
-              const reader = new FileReader();
-              reader.onload = function(ev) {
-                preview.innerHTML = `<img src='${ev.target.result}' style='max-width:80px;max-height:80px;border-radius:8px;'>`;
-              };
-              reader.readAsDataURL(e.target.files[0]);
-            } else {
-              preview.innerHTML = '';
-            }
-          };
-          // Отмена
-          form.querySelector('.edit-cancel-btn').onclick = function() {
-            form.remove();
-            if (contentElem) contentElem.style.display = '';
-            if (imageElem) imageElem.style.display = '';
-          };
-          // Сохранение
-          form.onsubmit = function(ev) {
-            ev.preventDefault();
-            const fd = new FormData(form);
-            fd.append('post_id', postId);
-            fetch('/wall/edit', {
-              method: 'POST',
-              body: fd
-            })
-            .then(r => r.json())
-            .then(resp => {
-              if (resp.success) {
-                if (contentElem) {
-                  contentElem.textContent = resp.content;
-                  contentElem.style.display = '';
-                }
-                if (resp.image_path) {
-                  if (imageElem) {
-                    imageElem.src = '/static/' + resp.image_path;
-                    imageElem.style.display = '';
-                  } else if (resp.image_path) {
-                    // Если раньше не было картинки, добавить
-                    const img = document.createElement('img');
-                    img.src = '/static/' + resp.image_path;
-                    img.alt = 'Изображение поста';
-                    img.style = 'max-width:320px;max-height:320px;border-radius:12px;box-shadow:0 2px 8px #3ec6b033;';
-                    postElem.insertBefore(img, postElem.querySelector('.wall-comments'));
-                  }
-                } else if (imageElem) {
-                  imageElem.remove();
-                }
-                form.remove();
-              } else {
-                alert('Ошибка: ' + (resp.error || 'Не удалось сохранить изменения.'));
-              }
-            });
-          };
-        });
-      });
-    });
-    // Функции для подписки/отписки
-    async function followUser(username) {
-      try {
-        const response = await fetch(`/follow/${username}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        const data = await response.json();
-        if (data.success) {
-          location.reload(); // Перезагружаем страницу для обновления данных
-        } else {
-          alert(data.error || 'Ошибка при подписке');
-        }
-      } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Ошибка при подписке');
-      }
-    }
-
-    async function unfollowUser(username) {
-      if (!confirm('Вы уверены, что хотите отписаться?')) {
-        return;
-      }
-      try {
-        const response = await fetch(`/unfollow/${username}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
-        const data = await response.json();
-        if (data.success) {
-          location.reload(); // Перезагружаем страницу для обновления данных
-        } else {
-          alert(data.error || 'Ошибка при отписке');
-        }
-      } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Ошибка при отписке');
-      }
-    }
-  </script>
+}
+</script>
 {% endblock %} 

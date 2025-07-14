@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="tag-feed-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <!-- Заголовок тега -->
+    <div class="tag-header" style="background: rgba(255,255,255,0.9); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="flex: 1;">
+                <h1 style="color: {{ tag.color }}; font-size: 2.2em; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+                    #{{ tag.name }}
+                </h1>
+                {% if tag.description %}
+                    <p style="color: #666; font-size: 1.1em; margin-bottom: 16px;">
+                        {{ tag.description }}
+                    </p>
+                {% endif %}
+                <div style="display: flex; align-items: center; gap: 16px; color: #666;">
+                    <span>📝 {{ posts|length }} постов</span>
+                    <span>👥 {{ tag.subscribers|length }} подписчиков</span>
+                </div>
+            </div>
+            
+            <!-- Кнопка подписки -->
+            <div style="flex-shrink: 0;">
+                {% if session.user_id %}
+                    <button id="subscribeBtn" 
+                            onclick="toggleSubscription()" 
+                            class="subscribe-btn {{ 'subscribed' if is_subscribed else '' }}"
+                            style="padding: 12px 24px; border: 2px solid {{ tag.color }}; border-radius: 12px; background: {{ tag.color if is_subscribed else '#fff' }}; color: {{ '#fff' if is_subscribed else tag.color }}; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                        {{ 'Отписаться' if is_subscribed else 'Подписаться' }}
+                    </button>
+                {% else %}
+                    <a href="/reg_login" style="padding: 12px 24px; border: 2px solid {{ tag.color }}; border-radius: 12px; background: #fff; color: {{ tag.color }}; font-weight: 600; text-decoration: none; display: inline-block;">
+                        Войти для подписки
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Посты -->
+    <div class="posts-container">
+        {% if posts %}
+            {% for post in posts %}
+                <div class="post-card" style="background: rgba(255,255,255,0.9); border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
+                    <!-- Заголовок поста -->
+                    <div class="post-header" style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+                        <div class="author-avatar" style="width: 50px; height: 50px; border-radius: 50%; background: #fafdff; overflow: hidden;">
+                            <img src="/static/{{ post.user.avatar or 'img/profile_user_svg.svg' }}" alt="Аватар" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="post-info" style="flex: 1;">
+                            <div class="author-name" style="font-weight: 700; color: #187a6e; font-size: 1.1em;">
+                                <a href="/user/{{ post.user.username }}" style="text-decoration: none; color: inherit;">
+                                    {{ post.user.username }}
+                                </a>
+                            </div>
+                            <div class="post-date" style="color: #666; font-size: 0.95em;">
+                                {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </div>
+                        </div>
+                        {% if post.category %}
+                            <div class="category-badge" style="background: {{ post.category.color }}; color: white; padding: 6px 12px; border-radius: 10px; font-size: 0.85em; font-weight: 600;">
+                                {{ post.category.icon }} {{ post.category.name }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Содержимое поста -->
+                    <div class="post-content" style="margin-bottom: 20px; line-height: 1.7; font-size: 1.05em;">
+                        {{ post.content|safe }}
+                    </div>
+
+                    <!-- Все теги поста -->
+                    {% if post.tags %}
+                        <div class="post-tags" style="margin-bottom: 20px;">
+                            {% for post_tag in post.tags %}
+                                <a href="/tag/{{ post_tag.id }}" 
+                                   class="tag-link {{ 'current-tag' if post_tag.id == tag.id else '' }}"
+                                   style="display: inline-block; background: {{ post_tag.color }}; color: white; padding: 6px 12px; border-radius: 14px; font-size: 0.85em; text-decoration: none; margin-right: 8px; margin-bottom: 6px; font-weight: 600; {{ 'border: 2px solid #fff; box-shadow: 0 0 0 2px ' + post_tag.color if post_tag.id == tag.id else '' }}">
+                                    #{{ post_tag.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Действия с постом -->
+                    <div class="post-actions" style="display: flex; align-items: center; gap: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <button class="like-btn" onclick="toggleLike({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 1.05em;">
+                            <span>👍</span>
+                            <span id="likes-count-{{ post.id }}">{{ post.likes_count or 0 }}</span>
+                        </button>
+                        <button class="comment-btn" onclick="toggleComments({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 1.05em;">
+                            <span>💬</span>
+                            <span>{{ post.comments|length }}</span>
+                        </button>
+                        <button class="share-btn" onclick="sharePost({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer; font-size: 1.05em;">
+                            <span>🔗</span>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-feed" style="text-align: center; padding: 80px 20px; color: #666;">
+                <div style="font-size: 4em; margin-bottom: 24px;">🏷️</div>
+                <h3 style="margin-bottom: 16px; font-size: 1.5em;">Пока нет постов с этим тегом</h3>
+                <p style="margin-bottom: 24px; font-size: 1.1em;">
+                    Станьте первым, кто создаст пост с тегом <strong style="color: {{ tag.color }};">#{{ tag.name }}</strong>
+                </p>
+                <a href="/feed" style="background: linear-gradient(90deg, #3ec6b0 0%, #4db6e2 100%); color: white; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 1.1em;">
+                    Создать пост
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let isSubscribed = {{ 'true' if is_subscribed else 'false' }};
+const tagId = {{ tag.id }};
+
+async function toggleSubscription() {
+    const btn = document.getElementById('subscribeBtn');
+    const originalText = btn.textContent;
+    
+    btn.disabled = true;
+    btn.textContent = 'Загрузка...';
+    
+    try {
+        const endpoint = isSubscribed ? `/unsubscribe_tag/${tagId}` : `/subscribe_tag/${tagId}`;
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            isSubscribed = !isSubscribed;
+            updateSubscribeButton();
+            
+            // Показываем уведомление
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message || 'Ошибка операции', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения', 'error');
+    } finally {
+        btn.disabled = false;
+        if (btn.textContent === 'Загрузка...') {
+            btn.textContent = originalText;
+        }
+    }
+}
+
+function updateSubscribeButton() {
+    const btn = document.getElementById('subscribeBtn');
+    const tagColor = '{{ tag.color }}';
+    
+    if (isSubscribed) {
+        btn.textContent = 'Отписаться';
+        btn.style.background = tagColor;
+        btn.style.color = '#fff';
+        btn.classList.add('subscribed');
+    } else {
+        btn.textContent = 'Подписаться';
+        btn.style.background = '#fff';
+        btn.style.color = tagColor;
+        btn.classList.remove('subscribed');
+    }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        z-index: 1000;
+        animation: slideIn 0.3s ease;
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
+// Лайк поста
+async function toggleLike(postId) {
+    try {
+        const response = await fetch(`/like_post/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const countElement = document.getElementById(`likes-count-${postId}`);
+            countElement.textContent = data.likes_count;
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+}
+
+// Показать/скрыть комментарии
+function toggleComments(postId) {
+    console.log('Toggle comments for post', postId);
+}
+
+// Поделиться постом
+function sharePost(postId) {
+    const url = `${window.location.origin}/post/${postId}`;
+    navigator.clipboard.writeText(url).then(() => {
+        showNotification('Ссылка скопирована в буфер обмена!', 'success');
+    });
+}
+</script>
+
+<style>
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.subscribe-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.subscribe-btn.subscribed:hover {
+    background: #e53935 !important;
+    border-color: #e53935 !important;
+}
+
+.post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(44,62,80,0.15);
+    transition: all 0.3s ease;
+}
+
+.like-btn:hover, .comment-btn:hover, .share-btn:hover {
+    color: #4db6e2;
+    transform: scale(1.1);
+}
+
+.tag-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.current-tag {
+    position: relative;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@media (max-width: 768px) {
+    .tag-header > div {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+    }
+    
+    .post-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .post-actions {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %} 
