@@ -5,18 +5,18 @@
 {% block content %}
 <div class="fade-in">
     <!-- Заголовок и фильтры -->
-    <div class="articles-header">
-        <div class="row">
-            <div class="col-md-8">
-                <h1 style="color: #f0f0f0; margin-bottom: 1rem;">
+    <div class="articles-header mb-4">
+        <div class="flex flex-between flex-center mb-3">
+            <div>
+                <h1 class="mb-2" style="color: #f0f0f0; font-size: 2rem;">
                     📚 Статьи WorkNest
                 </h1>
                 <p class="text-muted">Полноценные статьи, исследования и материалы от участников сообщества</p>
             </div>
-            <div class="col-md-4 text-right">
+            <div>
                 {% if current_user %}
-                    <a href="/articles/create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Создать статью
+                    <a href="/articles/create" class="btn btn-primary btn-lg">
+                        <span>✍️</span> Создать статью
                     </a>
                 {% endif %}
             </div>
@@ -24,441 +24,435 @@
     </div>
 
     <!-- Фильтры -->
-    <div class="filters-section mb-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="filter-group">
-                    <label class="filter-label">Категория:</label>
-                    <select id="categoryFilter" class="form-control filter-select">
-                        <option value="">Все категории</option>
-                        {% for category in categories %}
-                            <option value="{{ category.id }}" 
-                                    {% if current_category == category.id|string %}selected{% endif %}>
-                                {{ category.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+    <div class="card filters-section mb-4">
+        <div class="flex flex-center mb-3">
+            <div style="width: 3px; height: 24px; background: linear-gradient(45deg, #00e1d3, #00b8cc); border-radius: 2px; margin-right: 12px;"></div>
+            <h3 class="mb-0">Фильтры и поиск</h3>
+        </div>
+        
+        <div class="grid grid-3">
+            <div class="form-group">
+                <label class="form-label">Категория</label>
+                <select id="categoryFilter" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" 
+                                {% if current_category == category.id|string %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Поиск</label>
+                <div style="position: relative;">
+                    <input type="text" 
+                           id="searchInput" 
+                           class="form-input" 
+                           placeholder="🔍 Поиск по заголовку..."
+                           style="padding-left: 2.5rem;">
+                    <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #999;">🔍</span>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="filter-group">
-                    <label class="filter-label">Поиск:</label>
-                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск по заголовку...">
-                </div>
+            
+            <div class="form-group">
+                <label class="form-label">Сортировка</label>
+                <select id="sortFilter" class="form-select">
+                    <option value="newest">Новые сначала</option>
+                    <option value="oldest">Старые сначала</option>
+                    <option value="popular">По популярности</option>
+                    <option value="title">По алфавиту</option>
+                </select>
             </div>
-            <div class="col-md-4">
-                <div class="filter-group">
-                    <label class="filter-label">Сортировка:</label>
-                    <select id="sortFilter" class="form-control filter-select">
-                        <option value="newest">Новые</option>
-                        <option value="popular">Популярные</option>
-                        <option value="most_viewed">Просматриваемые</option>
-                    </select>
-                </div>
+        </div>
+        
+        <div class="flex flex-between flex-center mt-3">
+            <div class="flex flex-gap">
+                <button onclick="applyFilters()" class="btn btn-primary">
+                    <span>🔍</span> Применить фильтры
+                </button>
+                <button onclick="resetFilters()" class="btn btn-secondary">
+                    <span>🔄</span> Сбросить
+                </button>
+            </div>
+            <div class="text-muted">
+                <span id="articles-count">{{ articles|length }}</span> статей найдено
             </div>
         </div>
     </div>
 
     <!-- Популярные теги -->
-    {% if popular_tags %}
-        <div class="tags-section mb-4">
-            <h3 class="section-title">Популярные теги:</h3>
-            <div class="tags-container">
-                {% for tag in popular_tags %}
-                    <a href="/articles?tag={{ tag.name }}" class="tag-link">
-                        #{{ tag.name }}
-                    </a>
-                {% endfor %}
+    <div class="sidebar mb-4">
+        <h4 class="sidebar-title">Популярные теги</h4>
+        <div class="popular-tags" id="popular-tags">
+            <div class="text-center text-muted">
+                <div class="loading"></div>
+                <p>Загрузка тегов...</p>
             </div>
         </div>
-    {% endif %}
+    </div>
 
     <!-- Список статей -->
-    <div class="articles-grid">
+    <div class="articles-container">
         {% if articles %}
-            {% for article in articles %}
-                <div class="article-card" data-category="{{ article.category.id if article.category else '' }}" 
-                     data-title="{{ article.title.lower() }}">
-                    <!-- Обложка статьи -->
-                    {% if article.cover_image %}
-                        <div class="article-cover">
-                            <img src="{{ url_for('static', filename=article.cover_image) }}" alt="{{ article.title }}">
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Содержимое карточки -->
-                    <div class="article-content">
-                        <!-- Категория и дата -->
-                        <div class="article-meta">
-                            {% if article.category %}
-                                <span class="category-badge" style="background-color: {{ article.category.color }}20; color: {{ article.category.color }};">
+            <div class="grid grid-2" id="articles-grid">
+                {% for article in articles %}
+                    <article class="card article-card fade-in" data-category="{{ article.category.id if article.category else '' }}" data-title="{{ article.title.lower() }}">
+                        <!-- Категория -->
+                        {% if article.category %}
+                            <div class="article-category mb-2">
+                                <span class="tag" style="background-color: {{ article.category.color or '#00e1d3' }}; color: white;">
                                     {{ article.category.name }}
                                 </span>
-                            {% endif %}
-                            <span class="article-date">{{ article.created_at.strftime('%d.%m.%Y') }}</span>
-                        </div>
-                        
-                        <!-- Заголовок -->
-                        <h3 class="article-title">
-                            <a href="/articles/{{ article.id }}">{{ article.title }}</a>
-                        </h3>
-                        
-                        <!-- Краткое описание -->
-                        {% if article.summary %}
-                            <p class="article-summary">{{ article.summary[:200] }}{% if article.summary|length > 200 %}...{% endif %}</p>
+                            </div>
                         {% endif %}
-                        
-                        <!-- Автор и статистика -->
-                        <div class="article-footer">
-                            <div class="author-info">
-                                {% if article.author.avatar %}
-                                    <img src="{{ url_for('static', filename=article.author.avatar) }}" alt="{{ article.author.username }}" class="author-avatar">
-                                {% else %}
-                                    <div class="author-avatar-placeholder">{{ article.author.username[0].upper() }}</div>
+
+                        <!-- Заголовок -->
+                        <h3 class="article-title mb-2">
+                            <a href="/articles/{{ article.id }}" style="color: #f0f0f0; text-decoration: none;">
+                                {{ article.title }}
+                            </a>
+                        </h3>
+
+                        <!-- Автор и дата -->
+                        <div class="article-meta mb-3">
+                            <div class="meta-item">
+                                <span>👤</span>
+                                <strong style="color: #00e1d3;">{{ article.user.username }}</strong>
+                                {% if article.user.full_name %}
+                                    <span class="text-muted">({{ article.user.full_name }})</span>
                                 {% endif %}
-                                <div class="author-details">
-                                    <span class="author-name">{{ article.author.username }}</span>
-                                    <span class="reading-time">{{ article.reading_time }} мин чтения</span>
+                            </div>
+                            <div class="meta-item">
+                                <span>📅</span>
+                                <span>{{ article.created_at.strftime('%d.%m.%Y') }}</span>
+                            </div>
+                            {% if article.reading_time %}
+                                <div class="meta-item">
+                                    <span>📖</span>
+                                    <span>{{ article.reading_time }} мин</span>
                                 </div>
-                            </div>
-                            
-                            <div class="article-stats">
-                                <span class="stat-item">
-                                    <i class="fas fa-eye"></i> {{ article.views_count }}
-                                </span>
-                                <span class="stat-item">
-                                    <i class="fas fa-heart"></i> {{ article.likes_count }}
-                                </span>
-                                <span class="stat-item">
-                                    <i class="fas fa-comment"></i> {{ article.comments_count }}
-                                </span>
-                            </div>
+                            {% endif %}
                         </div>
-                        
+
+                        <!-- Превью -->
+                        {% if article.preview_text %}
+                            <div class="article-preview mb-3">
+                                <p class="text-muted">{{ article.preview_text }}</p>
+                            </div>
+                        {% endif %}
+
                         <!-- Теги -->
                         {% if article.tags %}
-                            <div class="article-tags">
+                            <div class="article-tags mb-3">
                                 {% for tag in article.tags %}
-                                    <span class="tag-small">#{{ tag.name }}</span>
+                                                                         <a href="/tag/{{ tag.id }}" class="tag tag-clickable" onclick="filterByTag('{{ tag.name }}'); return false;">
+                                         #{{ tag.name }}
+                                     </a>
                                 {% endfor %}
                             </div>
                         {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+
+                        <!-- Статистика -->
+                        <div class="article-stats flex flex-between flex-center">
+                            <div class="flex flex-gap">
+                                <span class="text-muted">👁️ {{ article.views or 0 }}</span>
+                                                            <span class="text-muted">❤️ {{ article.likes_count }}</span>
+                            <span class="text-muted">💬 {{ article.comments_count }}</span>
+                            </div>
+                            <a href="/articles/{{ article.id }}" class="btn btn-outline btn-sm">
+                                Читать полностью
+                            </a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
         {% else %}
+            <!-- Пустое состояние -->
             <div class="empty-state">
-                <div class="empty-icon">📝</div>
-                <h3>Пока нет статей</h3>
-                <p>Станьте первым, кто опубликует статью в этой категории!</p>
+                <div class="empty-state-icon">📚</div>
+                <h3 class="empty-state-title">Пока нет статей</h3>
+                <p class="empty-state-description">
+                    Станьте первым, кто поделится полноценной статьей!
+                </p>
                 {% if current_user %}
-                    <a href="/articles/create" class="btn btn-primary">Создать статью</a>
+                    <a href="/articles/create" class="btn btn-primary">
+                        Создать первую статью
+                    </a>
+                {% else %}
+                    <a href="/reg_login" class="btn btn-primary">
+                        Зарегистрироваться
+                    </a>
                 {% endif %}
             </div>
         {% endif %}
     </div>
 </div>
 
+{% block extra_css %}
 <style>
-.articles-header {
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #2c2c2c;
-}
-
-.filters-section {
-    background: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid #2c2c2c;
-}
-
-.filter-group {
-    margin-bottom: 1rem;
-}
-
-.filter-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #f0f0f0;
-    font-weight: 500;
-}
-
-.filter-select, .form-control {
-    background: #2c2c2c;
-    border: 1px solid #404040;
-    color: #f0f0f0;
-    border-radius: 8px;
-    padding: 0.75rem;
-}
-
-.filter-select:focus, .form-control:focus {
-    background: #2c2c2c;
-    border-color: #00e1d3;
-    color: #f0f0f0;
-    box-shadow: 0 0 0 2px rgba(0, 225, 211, 0.2);
-}
-
-.tags-section {
-    background: #1e1e1e;
-    padding: 1.5rem;
-    border-radius: 12px;
-    border: 1px solid #2c2c2c;
-}
-
-.section-title {
-    color: #f0f0f0;
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
-}
-
-.tags-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.tag-link {
-    background: linear-gradient(45deg, #00e1d3, #00b8cc);
-    color: #121212;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    text-decoration: none;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.tag-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 225, 211, 0.3);
-    text-decoration: none;
-    color: #121212;
-}
-
-.articles-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 2rem;
-    margin-top: 2rem;
-}
-
-.article-card {
-    background: #1e1e1e;
-    border-radius: 12px;
-    border: 1px solid #2c2c2c;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.article-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 225, 211, 0.1);
-    border-color: #00e1d3;
-}
-
-.article-cover {
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
-    background: #2c2c2c;
-}
-
-.article-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.article-content {
-    padding: 1.5rem;
-}
-
-.article-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.category-badge {
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.article-date {
-    color: #888;
-    font-size: 0.9rem;
-}
-
-.article-title {
-    margin-bottom: 1rem;
-}
-
-.article-title a {
-    color: #f0f0f0;
-    text-decoration: none;
-    font-size: 1.3rem;
-    font-weight: 600;
-    line-height: 1.3;
-}
-
-.article-title a:hover {
-    color: #00e1d3;
-    text-decoration: none;
-}
-
-.article-summary {
-    color: #ccc;
-    line-height: 1.6;
-    margin-bottom: 1.5rem;
-}
-
-.article-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.author-info {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-}
-
-.author-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.author-avatar-placeholder {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #00e1d3, #00b8cc);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #121212;
-    font-weight: bold;
-}
-
-.author-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.author-name {
-    color: #f0f0f0;
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-.reading-time {
-    color: #888;
-    font-size: 0.8rem;
-}
-
-.article-stats {
-    display: flex;
-    gap: 1rem;
-}
-
-.stat-item {
-    color: #888;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.article-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.tag-small {
-    background: #2c2c2c;
-    color: #00e1d3;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    border: 1px solid #404040;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: #888;
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-    color: #f0f0f0;
-    margin-bottom: 1rem;
-}
-
-@media (max-width: 768px) {
-    .articles-grid {
-        grid-template-columns: 1fr;
+    .articles-header {
+        margin-bottom: 2rem;
+    }
+    
+    .filters-section {
+        position: relative;
+        overflow: visible;
+    }
+    
+    .filters-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #00e1d3, #00b8cc);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .article-card {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .article-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 24px rgba(0, 225, 211, 0.15);
+    }
+    
+    .article-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #00e1d3, #00b8cc);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .article-card:hover::before {
+        opacity: 1;
+    }
+    
+    .article-title a:hover {
+        color: #00e1d3 !important;
+    }
+    
+    .article-category {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1;
+    }
+    
+    .article-meta {
+        display: flex;
+        flex-wrap: wrap;
         gap: 1rem;
+        color: #999;
+        font-size: 0.85rem;
     }
     
-    .article-footer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
+    .article-preview p {
+        line-height: 1.6;
+        margin: 0;
     }
     
-    .filters-section .row {
-        flex-direction: column;
+    .article-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const categoryFilter = document.getElementById('categoryFilter');
-    const searchInput = document.getElementById('searchInput');
-    const sortFilter = document.getElementById('sortFilter');
-    const articles = document.querySelectorAll('.article-card');
     
-    function filterArticles() {
-        const categoryValue = categoryFilter.value;
-        const searchValue = searchInput.value.toLowerCase();
+    .article-stats {
+        padding-top: 1rem;
+        border-top: 1px solid #2c2c2c;
+    }
+    
+    .popular-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .tag-with-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        background-color: rgba(0, 225, 211, 0.1);
+        color: #00e1d3;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .tag-with-count:hover {
+        background-color: #00e1d3;
+        color: white;
+        transform: scale(1.05);
+    }
+    
+    .tag-count {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 0.1rem 0.4rem;
+        border-radius: 10px;
+        font-size: 0.7rem;
+    }
+    
+    @media (max-width: 768px) {
+        .articles-header .flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
         
-        articles.forEach(article => {
-            const categoryMatch = !categoryValue || article.dataset.category === categoryValue;
-            const searchMatch = !searchValue || article.dataset.title.includes(searchValue);
-            
-            if (categoryMatch && searchMatch) {
-                article.style.display = 'block';
-            } else {
-                article.style.display = 'none';
+        .filters-section .grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .article-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .article-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allArticles = [];
+    
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        // Сохраняем все статьи для фильтрации
+        allArticles = Array.from(document.querySelectorAll('.article-card'));
+        
+        // Загружаем популярные теги
+        loadPopularTags();
+        
+        // Обновляем счетчик
+        updateArticlesCount();
+    });
+    
+    // Загрузка популярных тегов
+    function loadPopularTags() {
+        fetch('/api/popular_tags')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('popular-tags');
+                if (data.tags && data.tags.length > 0) {
+                    container.innerHTML = data.tags.map(tag => `
+                        <a href="#" class="tag-with-count" onclick="filterByTag('${tag.name}')">
+                            #${tag.name}
+                            <span class="tag-count">${tag.count}</span>
+                        </a>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">Теги не найдены</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки тегов:', error);
+                document.getElementById('popular-tags').innerHTML = 
+                    '<p class="text-muted">Ошибка загрузки тегов</p>';
+            });
+    }
+    
+    // Применение фильтров
+    function applyFilters() {
+        const category = document.getElementById('categoryFilter').value;
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const sort = document.getElementById('sortFilter').value;
+        
+        let filteredArticles = allArticles.filter(article => {
+            const matchesCategory = !category || article.dataset.category === category;
+            const matchesSearch = !search || article.dataset.title.includes(search);
+            return matchesCategory && matchesSearch;
+        });
+        
+        // Сортировка
+        filteredArticles.sort((a, b) => {
+            switch(sort) {
+                case 'oldest':
+                    return new Date(a.querySelector('.article-meta').textContent) - 
+                           new Date(b.querySelector('.article-meta').textContent);
+                case 'popular':
+                    const aLikes = parseInt(a.querySelector('.article-stats').textContent.match(/❤️ (\d+)/)?.[1] || '0');
+                    const bLikes = parseInt(b.querySelector('.article-stats').textContent.match(/❤️ (\d+)/)?.[1] || '0');
+                    return bLikes - aLikes;
+                case 'title':
+                    return a.dataset.title.localeCompare(b.dataset.title);
+                default: // newest
+                    return new Date(b.querySelector('.article-meta').textContent) - 
+                           new Date(a.querySelector('.article-meta').textContent);
             }
         });
+        
+        // Скрываем все статьи
+        allArticles.forEach(article => article.style.display = 'none');
+        
+        // Показываем отфильтрованные
+        filteredArticles.forEach(article => article.style.display = 'block');
+        
+        // Обновляем счетчик
+        updateArticlesCount(filteredArticles.length);
+        
+        // Показываем тост
+        showToast(`Найдено ${filteredArticles.length} статей`, 'info');
     }
     
-    categoryFilter.addEventListener('change', filterArticles);
-    searchInput.addEventListener('input', filterArticles);
+    // Сброс фильтров
+    function resetFilters() {
+        document.getElementById('categoryFilter').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('sortFilter').value = 'newest';
+        
+        // Показываем все статьи
+        allArticles.forEach(article => article.style.display = 'block');
+        
+        // Обновляем счетчик
+        updateArticlesCount();
+        
+        showToast('Фильтры сброшены', 'success');
+    }
     
-    // Сортировка (базовая реализация)
-    sortFilter.addEventListener('change', function() {
-        const sortValue = this.value;
-        // Здесь можно добавить AJAX запрос для пересортировки
-        console.log('Сортировка:', sortValue);
+    // Фильтрация по тегу
+    function filterByTag(tagName) {
+        document.getElementById('searchInput').value = tagName;
+        applyFilters();
+    }
+    
+    // Обновление счетчика статей
+    function updateArticlesCount(count = null) {
+        const counter = document.getElementById('articles-count');
+        if (counter) {
+            counter.textContent = count !== null ? count : allArticles.length;
+        }
+    }
+    
+    // Поиск в реальном времени
+    document.getElementById('searchInput').addEventListener('input', function() {
+        if (this.value.length > 2 || this.value.length === 0) {
+            applyFilters();
+        }
     });
-});
+    
+    // Автоматическое применение фильтров при изменении
+    document.getElementById('categoryFilter').addEventListener('change', applyFilters);
+    document.getElementById('sortFilter').addEventListener('change', applyFilters);
 </script>
+{% endblock %}
 {% endblock %} 

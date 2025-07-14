@@ -116,6 +116,12 @@ class Post(db.Model):
             'uploaded_at': datetime.utcnow().isoformat()
         })
         self.attachments = json.dumps(attachments)
+    
+    def is_liked_by(self, user):
+        """Проверить, лайкнул ли пользователь этот пост"""
+        if not user:
+            return False
+        return Like.query.filter_by(post_id=self.id, user_id=user.id).first() is not None
 
 class Article(db.Model):
     """Полноценные статьи с расширенными возможностями"""

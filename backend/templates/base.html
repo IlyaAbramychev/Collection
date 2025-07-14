@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}WorkNest{% endblock %}</title>
+    <title>{% block title %}WorkNest - Платформа для профессионального развития{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='worknest.css') }}">
     {% block extra_css %}{% endblock %}
@@ -14,41 +14,61 @@
         <div class="container">
             <div class="navbar-content">
                 <a href="/" class="logo">WorkNest</a>
+                
+                <!-- Десктопное меню -->
                 <ul class="nav-links">
-                    <li><a href="/">Главная</a></li>
-                    <li><a href="/articles">Статьи</a></li>
+                    <li><a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">Главная</a></li>
+                    <li><a href="/articles" class="{% if request.endpoint == 'articles' %}active{% endif %}">Статьи</a></li>
                     {% if current_user %}
-                        <li><a href="/wall">Моя стена</a></li>
-                        <li><a href="/feed">Лента</a></li>
-                    <li><a href="/personalized_feed">Моя лента</a></li>
-                        <li><a href="/articles/create">Создать статью</a></li>
-                        <li><a href="/search">Поиск</a></li>
-                        <li><a href="/profile">Профиль</a></li>
+                        <li><a href="/wall" class="{% if request.endpoint == 'wall' %}active{% endif %}">Моя стена</a></li>
+                        <li><a href="/personalized_feed" class="{% if request.endpoint == 'personalized_feed' %}active{% endif %}">Моя лента</a></li>
+                        <li><a href="/search" class="{% if request.endpoint == 'search_users' %}active{% endif %}">Поиск</a></li>
+                        <li><a href="/profile" class="{% if request.endpoint == 'profile' %}active{% endif %}">Профиль</a></li>
                         <li><a href="/logout">Выход</a></li>
                     {% else %}
-                        <li><a href="/search">Поиск</a></li>
-                        <li><a href="/reg_login">Вход</a></li>
+                        <li><a href="/reg_login" class="{% if request.endpoint == 'reg_login' %}active{% endif %}">Вход</a></li>
                     {% endif %}
                 </ul>
+                
+                <!-- Бургер-меню -->
+                <button class="burger-menu" onclick="toggleMobileMenu()">
+                    <div class="burger-line"></div>
+                    <div class="burger-line"></div>
+                    <div class="burger-line"></div>
+                </button>
             </div>
         </div>
     </nav>
 
+    <!-- Мобильное меню -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="mobile-menu-close" onclick="closeMobileMenu()">×</button>
+        <div class="mobile-nav-links">
+            <a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}" onclick="closeMobileMenu()">🏠 Главная</a>
+            <a href="/articles" class="{% if request.endpoint == 'articles' %}active{% endif %}" onclick="closeMobileMenu()">📚 Статьи</a>
+            {% if current_user %}
+                <a href="/wall" class="{% if request.endpoint == 'wall' %}active{% endif %}" onclick="closeMobileMenu()">📝 Моя стена</a>
+                <a href="/personalized_feed" class="{% if request.endpoint == 'personalized_feed' %}active{% endif %}" onclick="closeMobileMenu()">🎯 Моя лента</a>
+                <a href="/search" class="{% if request.endpoint == 'search_users' %}active{% endif %}" onclick="closeMobileMenu()">🔍 Поиск</a>
+                <a href="/profile" class="{% if request.endpoint == 'profile' %}active{% endif %}" onclick="closeMobileMenu()">👤 Профиль</a>
+                <a href="/logout" onclick="closeMobileMenu()">🚪 Выход</a>
+            {% else %}
+                <a href="/reg_login" class="{% if request.endpoint == 'reg_login' %}active{% endif %}" onclick="closeMobileMenu()">🔐 Вход</a>
+            {% endif %}
+        </div>
+    </div>
+
     <!-- Основной контент -->
     <main class="main-content">
         <div class="container">
-            <!-- Флеш-сообщения -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
-                            {{ message }}
-                        </div>
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
-
-            <!-- Контент страницы -->
+            
             {% block content %}{% endblock %}
         </div>
     </main>
@@ -56,15 +76,216 @@
     <!-- Футер -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024 WorkNest. Платформа для публикации и обсуждения работ.</p>
-            <p>Создано для студентов, специалистов и исследователей</p>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>WorkNest</h4>
+                    <p>Платформа для профессионального развития, обмена знаниями и нетворкинга.</p>
+                    <p>Создавайте, делитесь, развивайтесь вместе с нами!</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Навигация</h4>
+                    <ul>
+                        <li><a href="/">Главная</a></li>
+                        <li><a href="/articles">Статьи</a></li>
+                        {% if current_user %}
+                            <li><a href="/wall">Моя стена</a></li>
+                            <li><a href="/personalized_feed">Моя лента</a></li>
+                        {% endif %}
+                        <li><a href="/search">Поиск пользователей</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Возможности</h4>
+                    <ul>
+                        <li><a href="/articles/create">Создать статью</a></li>
+                        <li><a href="/wall">Написать пост</a></li>
+                        <li><a href="/profile">Профиль</a></li>
+                        <li><a href="/search">Найти коллег</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Контакты</h4>
+                    <p>📧 support@worknest.ru</p>
+                    <p>📱 +7 (000) 000-00-00</p>
+                    <p>🌐 worknest.ru</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 WorkNest. Все права защищены.</p>
+            </div>
         </div>
     </footer>
 
-    <!-- Скрипты -->
-    <script src="{{ url_for('static', filename='header-burger.js') }}"></script>
-    <script src="{{ url_for('static', filename='like-toggle.js') }}"></script>
-    <script src="{{ url_for('static', filename='search-typewriter.js') }}"></script>
+    <!-- Контейнер для тостов -->
+    <div id="toastContainer"></div>
+
+    <!-- Базовый JavaScript -->
+    <script>
+        // Мобильное меню
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const burgerMenu = document.querySelector('.burger-menu');
+            
+            mobileMenu.classList.toggle('active');
+            burgerMenu.classList.toggle('active');
+            
+            // Блокируем скролл при открытом меню
+            if (mobileMenu.classList.contains('active')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        }
+        
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const burgerMenu = document.querySelector('.burger-menu');
+            
+            mobileMenu.classList.remove('active');
+            burgerMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Закрытие меню при клике вне его
+        document.addEventListener('click', function(e) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const burgerMenu = document.querySelector('.burger-menu');
+            
+            if (mobileMenu.classList.contains('active') && 
+                !mobileMenu.contains(e.target) && 
+                !burgerMenu.contains(e.target)) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Закрытие меню при изменении размера экрана
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                closeMobileMenu();
+            }
+        });
+        
+        // Тосты
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            
+            toastContainer.appendChild(toast);
+            
+            // Показываем тост
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            
+            // Скрываем тост через 3 секунды
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toastContainer.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Обработка форм с AJAX
+        function handleFormSubmit(formSelector, successCallback) {
+            const form = document.querySelector(formSelector);
+            if (!form) return;
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const button = form.querySelector('button[type="submit"]');
+                const originalText = button.textContent;
+                
+                button.disabled = true;
+                button.textContent = 'Загрузка...';
+                
+                fetch(form.action, {
+                    method: form.method,
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message || 'Успешно!', 'success');
+                        if (successCallback) successCallback(data);
+                    } else {
+                        showToast(data.message || 'Ошибка!', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    showToast('Произошла ошибка', 'error');
+                })
+                .finally(() => {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                });
+            });
+        }
+        
+        // Плавная прокрутка для якорных ссылок
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Lazy loading для изображений
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+            
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+        
+        // Автоматическое обновление времени
+        function updateTimeStamps() {
+            document.querySelectorAll('.timestamp').forEach(element => {
+                const timestamp = element.dataset.timestamp;
+                if (timestamp) {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diff = now - date;
+                    
+                    if (diff < 60000) {
+                        element.textContent = 'только что';
+                    } else if (diff < 3600000) {
+                        element.textContent = `${Math.floor(diff / 60000)} мин назад`;
+                    } else if (diff < 86400000) {
+                        element.textContent = `${Math.floor(diff / 3600000)} ч назад`;
+                    } else {
+                        element.textContent = date.toLocaleDateString('ru-RU');
+                    }
+                }
+            });
+        }
+        
+        // Обновляем время каждую минуту
+        setInterval(updateTimeStamps, 60000);
+        updateTimeStamps();
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

@@ -5,573 +5,696 @@
 {% block content %}
 <div class="fade-in">
     <div class="create-article-container">
-        <div class="header-section">
-            <h1>✍️ Создать статью</h1>
-            <p class="subtitle">Поделитесь своими знаниями и исследованиями с сообществом</p>
+        <div class="header-section mb-4">
+            <h1 class="mb-2">✍️ Создать статью</h1>
+            <p class="text-muted">Поделитесь своими знаниями и исследованиями с сообществом</p>
         </div>
 
-        <form method="POST" class="article-form">
-            <div class="form-row">
+        <form method="POST" class="article-form" id="article-form">
+            <!-- Основная информация -->
+            <div class="card mb-4">
+                <div class="flex flex-center mb-3">
+                    <div style="width: 3px; height: 24px; background: linear-gradient(45deg, #00e1d3, #00b8cc); border-radius: 2px; margin-right: 12px;"></div>
+                    <h3 class="mb-0">Основная информация</h3>
+                </div>
+                
                 <div class="form-group">
-                    <label for="title">Заголовок статьи *</label>
-                    <input type="text" id="title" name="title" class="form-control" required 
-                           placeholder="Введите заголовок статьи..." maxlength="256">
-                    <div class="char-counter">
-                        <span id="titleCounter">0</span>/256
+                    <label for="title" class="form-label">Заголовок статьи *</label>
+                    <input type="text" 
+                           id="title" 
+                           name="title" 
+                           class="form-input" 
+                           required 
+                           placeholder="Введите заголовок статьи..." 
+                           maxlength="256">
+                    <div class="flex flex-between mt-1">
+                        <div class="form-error" id="title-error"></div>
+                        <div class="char-counter text-muted">
+                            <span id="titleCounter">0</span>/256
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="preview_text" class="form-label">Краткое описание</label>
+                    <textarea id="preview_text" 
+                              name="preview_text" 
+                              class="form-textarea" 
+                              rows="3" 
+                              placeholder="Краткое описание статьи для предварительного просмотра..."
+                              maxlength="500"></textarea>
+                    <div class="flex flex-between mt-1">
+                        <small class="text-muted">Это описание будет показано в списке статей</small>
+                        <div class="char-counter text-muted">
+                            <span id="previewCounter">0</span>/500
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="category_id" class="form-label">Категория</label>
+                        <select id="category_id" name="category_id" class="form-select">
+                            <option value="">Выберите категорию</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-error" id="category-error"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tags" class="form-label">Теги</label>
+                        <input type="text" 
+                               id="tags" 
+                               name="tags" 
+                               class="form-input" 
+                               placeholder="тег1, тег2, тег3...">
+                        <small class="text-muted">Разделяйте теги запятыми</small>
                     </div>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="summary">Краткое описание</label>
-                    <textarea id="summary" name="summary" class="form-control" rows="3" 
-                              placeholder="Краткое описание статьи для предварительного просмотра..."></textarea>
-                    <small class="form-text">Это описание будет показано в списке статей</small>
+            <!-- Содержание статьи -->
+            <div class="card mb-4">
+                <div class="flex flex-center mb-3">
+                    <div style="width: 3px; height: 24px; background: linear-gradient(45deg, #00e1d3, #00b8cc); border-radius: 2px; margin-right: 12px;"></div>
+                    <h3 class="mb-0">Содержание статьи</h3>
                 </div>
-            </div>
+                
+                <!-- Вкладки -->
+                <div class="tabs-container mb-3">
+                    <div class="tabs-nav">
+                        <button type="button" class="tab-btn active" onclick="switchTab('edit')">
+                            <span>✏️</span> Редактировать
+                        </button>
+                        <button type="button" class="tab-btn" onclick="switchTab('preview')">
+                            <span>👁️</span> Превью
+                        </button>
+                    </div>
+                </div>
 
-            <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="category_id">Категория</label>
-                    <select id="category_id" name="category_id" class="form-control">
-                        <option value="">Выберите категорию</option>
-                        {% for category in categories %}
-                            <option value="{{ category.id }}">{{ category.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group col-md-6">
-                    <label for="tags">Теги</label>
-                    <input type="text" id="tags" name="tags" class="form-control" 
-                           placeholder="тег1, тег2, тег3...">
-                    <small class="form-text">Разделяйте теги запятыми</small>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="content">Содержание статьи *</label>
+                <!-- Редактор -->
                 <div class="editor-container">
-                    <div class="editor-toolbar">
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('**', '**')" title="Жирный">
-                            <strong>B</strong>
+                    <div class="tab-content active" id="edit-tab">
+                        <div class="form-group">
+                            <label for="content" class="form-label">Содержание статьи *</label>
+                            <div class="markdown-toolbar mb-2">
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('**', '**')" title="Жирный">
+                                    <strong>B</strong>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('*', '*')" title="Курсив">
+                                    <em>I</em>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('`', '`')" title="Код">
+                                    &lt;/&gt;
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('## ', '')" title="Заголовок">
+                                    H2
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('- ', '')" title="Список">
+                                    ≡
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('[', '](url)')" title="Ссылка">
+                                    🔗
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertMarkdown('> ', '')" title="Цитата">
+                                    ❝
+                                </button>
+                            </div>
+                            
+                            <textarea id="content" 
+                                      name="content" 
+                                      class="form-textarea markdown-editor" 
+                                      required 
+                                      placeholder="Напишите содержание статьи в формате Markdown..."
+                                      rows="20"></textarea>
+                            <div class="flex flex-between mt-1">
+                                <div class="form-error" id="content-error"></div>
+                                <div class="text-muted">
+                                    <span id="contentCounter">0</span> символов
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="preview-tab">
+                        <div class="preview-container">
+                            <div id="markdown-preview" class="markdown-content">
+                                <p class="text-muted">Напишите содержание статьи, чтобы увидеть превью</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Дополнительные настройки -->
+            <div class="card mb-4">
+                <div class="flex flex-center mb-3">
+                    <div style="width: 3px; height: 24px; background: linear-gradient(45deg, #00e1d3, #00b8cc); border-radius: 2px; margin-right: 12px;"></div>
+                    <h3 class="mb-0">Дополнительные настройки</h3>
+                </div>
+                
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label flex flex-center">
+                            <input type="checkbox" id="is_published" name="is_published" checked>
+                            <span class="ml-2">Опубликовать сразу</span>
+                        </label>
+                        <small class="text-muted">Снимите галочку, чтобы сохранить как черновик</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label flex flex-center">
+                            <input type="checkbox" id="is_pinned" name="is_pinned">
+                            <span class="ml-2">Закрепить статью</span>
+                        </label>
+                        <small class="text-muted">Закрепленные статьи отображаются в начале списка</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="form-actions">
+                <div class="flex flex-between flex-center">
+                    <div class="flex flex-gap">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <span>📝</span> Создать статью
                         </button>
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('*', '*')" title="Курсив">
-                            <em>I</em>
-                        </button>
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('`', '`')" title="Код">
-                            &lt;/&gt;
-                        </button>
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('## ', '')" title="Заголовок">
-                            H2
-                        </button>
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('- ', '')" title="Список">
-                            ≡
-                        </button>
-                        <button type="button" class="toolbar-btn" onclick="insertMarkdown('[', '](url)')" title="Ссылка">
-                            🔗
-                        </button>
-                        <div class="toolbar-divider"></div>
-                        <button type="button" class="toolbar-btn" onclick="togglePreview()" id="previewBtn">
-                            👁️ Превью
+                        <button type="button" onclick="saveDraft()" class="btn btn-secondary">
+                            <span>💾</span> Сохранить черновик
                         </button>
                     </div>
                     
-                    <div class="editor-content">
-                        <textarea id="content" name="content" class="form-control content-editor" required 
-                                  placeholder="Напишите содержание статьи используя Markdown..."></textarea>
-                        <div id="preview" class="preview-pane" style="display: none;">
-                            <div class="preview-content"></div>
-                        </div>
+                    <div class="flex flex-gap">
+                        <button type="button" onclick="previewArticle()" class="btn btn-outline">
+                            <span>👁️</span> Предпросмотр
+                        </button>
+                        <a href="/articles" class="btn btn-outline">
+                            <span>❌</span> Отмена
+                        </a>
                     </div>
-                </div>
-                <div class="editor-help">
-                    <details>
-                        <summary>Справка по Markdown</summary>
-                        <div class="markdown-help">
-                            <div class="help-item">
-                                <code>**жирный текст**</code> → <strong>жирный текст</strong>
-                            </div>
-                            <div class="help-item">
-                                <code>*курсив*</code> → <em>курсив</em>
-                            </div>
-                            <div class="help-item">
-                                <code>`код`</code> → <code>код</code>
-                            </div>
-                            <div class="help-item">
-                                <code>## Заголовок</code> → <h3>Заголовок</h3>
-                            </div>
-                            <div class="help-item">
-                                <code>- Элемент списка</code> → <ul><li>Элемент списка</li></ul>
-                            </div>
-                            <div class="help-item">
-                                <code>[текст](ссылка)</code> → <a href="#">текст</a>
-                            </div>
-                        </div>
-                    </details>
-                </div>
-            </div>
-
-            <div class="form-actions">
-                <div class="publish-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="is_published" id="is_published" checked>
-                        <span class="checkmark"></span>
-                        Опубликовать сразу
-                    </label>
-                    <small class="form-text">Снимите галочку, чтобы сохранить как черновик</small>
-                </div>
-                
-                <div class="action-buttons">
-                    <a href="/articles" class="btn btn-secondary">Отмена</a>
-                    <button type="submit" class="btn btn-primary">
-                        <span id="submitText">Опубликовать статью</span>
-                    </button>
                 </div>
             </div>
         </form>
     </div>
 </div>
 
+{% block extra_css %}
 <style>
-.create-article-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.header-section {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-.header-section h1 {
-    color: #f0f0f0;
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-}
-
-.subtitle {
-    color: #888;
-    font-size: 1.1rem;
-}
-
-.article-form {
-    background: #1e1e1e;
-    padding: 2rem;
-    border-radius: 12px;
-    border: 1px solid #2c2c2c;
-}
-
-.form-row {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.form-group {
-    flex: 1;
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #f0f0f0;
-    font-weight: 500;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.75rem;
-    background: #2c2c2c;
-    border: 1px solid #404040;
-    border-radius: 8px;
-    color: #f0f0f0;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.form-control:focus {
-    outline: none;
-    border-color: #00e1d3;
-    box-shadow: 0 0 0 2px rgba(0, 225, 211, 0.2);
-}
-
-.form-text {
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-}
-
-.char-counter {
-    text-align: right;
-    color: #888;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-}
-
-.editor-container {
-    border: 1px solid #404040;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #2c2c2c;
-}
-
-.editor-toolbar {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem;
-    background: #1e1e1e;
-    border-bottom: 1px solid #404040;
-    gap: 0.5rem;
-}
-
-.toolbar-btn {
-    background: #2c2c2c;
-    border: 1px solid #404040;
-    color: #f0f0f0;
-    padding: 0.5rem 0.75rem;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-}
-
-.toolbar-btn:hover {
-    background: #404040;
-    border-color: #00e1d3;
-}
-
-.toolbar-btn.active {
-    background: #00e1d3;
-    color: #121212;
-    border-color: #00e1d3;
-}
-
-.toolbar-divider {
-    width: 1px;
-    height: 24px;
-    background: #404040;
-    margin: 0 0.5rem;
-}
-
-.editor-content {
-    position: relative;
-    min-height: 400px;
-}
-
-.content-editor {
-    width: 100%;
-    min-height: 400px;
-    border: none;
-    border-radius: 0;
-    background: #2c2c2c;
-    color: #f0f0f0;
-    font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 0.95rem;
-    line-height: 1.6;
-    resize: vertical;
-    padding: 1rem;
-}
-
-.content-editor:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-.preview-pane {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #2c2c2c;
-    padding: 1rem;
-    overflow-y: auto;
-}
-
-.preview-content {
-    color: #f0f0f0;
-    line-height: 1.6;
-}
-
-.preview-content h1, .preview-content h2, .preview-content h3 {
-    color: #00e1d3;
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.preview-content p {
-    margin-bottom: 1rem;
-}
-
-.preview-content code {
-    background: #1e1e1e;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    color: #00e1d3;
-}
-
-.preview-content pre {
-    background: #1e1e1e;
-    padding: 1rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 1rem 0;
-}
-
-.preview-content blockquote {
-    border-left: 4px solid #00e1d3;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #ccc;
-}
-
-.preview-content ul, .preview-content ol {
-    padding-left: 2rem;
-    margin: 1rem 0;
-}
-
-.preview-content li {
-    margin-bottom: 0.5rem;
-}
-
-.editor-help {
-    margin-top: 1rem;
-}
-
-.editor-help details {
-    background: #1e1e1e;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid #404040;
-}
-
-.editor-help summary {
-    color: #00e1d3;
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.markdown-help {
-    margin-top: 1rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.help-item {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem;
-    background: #2c2c2c;
-    border-radius: 4px;
-}
-
-.help-item code {
-    background: #1e1e1e;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    color: #00e1d3;
-    font-size: 0.9rem;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 2rem;
-    padding-top: 2rem;
-    border-top: 1px solid #2c2c2c;
-}
-
-.publish-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #f0f0f0;
-    cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-    display: none;
-}
-
-.checkmark {
-    width: 20px;
-    height: 20px;
-    background: #2c2c2c;
-    border: 2px solid #404040;
-    border-radius: 4px;
-    position: relative;
-    transition: all 0.3s ease;
-}
-
-.checkbox-label input[type="checkbox"]:checked + .checkmark {
-    background: #00e1d3;
-    border-color: #00e1d3;
-}
-
-.checkbox-label input[type="checkbox"]:checked + .checkmark:after {
-    content: '✓';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #121212;
-    font-weight: bold;
-}
-
-.action-buttons {
-    display: flex;
-    gap: 1rem;
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.btn-primary {
-    background: linear-gradient(45deg, #00e1d3, #00b8cc);
-    color: #121212;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 225, 211, 0.3);
-}
-
-.btn-secondary {
-    background: #2c2c2c;
-    color: #f0f0f0;
-    border: 1px solid #404040;
-}
-
-.btn-secondary:hover {
-    background: #404040;
-    text-decoration: none;
-    color: #f0f0f0;
-}
-
-@media (max-width: 768px) {
-    .form-row {
-        flex-direction: column;
+    .create-article-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    .header-section {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .header-section h1 {
+        font-size: 2.5rem;
+        color: #f0f0f0;
+    }
+    
+    .char-counter {
+        font-size: 0.8rem;
+        color: #999;
+    }
+    
+    .tabs-container {
+        border-bottom: 1px solid #2c2c2c;
+    }
+    
+    .tabs-nav {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .tab-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: transparent;
+        color: #999;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+    
+    .tab-btn:hover {
+        color: #f0f0f0;
+        background-color: rgba(0, 225, 211, 0.1);
+    }
+    
+    .tab-btn.active {
+        color: #00e1d3;
+        border-bottom-color: #00e1d3;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .editor-container {
+        position: relative;
+    }
+    
+    .markdown-toolbar {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .toolbar-btn {
+        padding: 0.5rem 0.75rem;
+        border: none;
+        background: transparent;
+        color: #999;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .toolbar-btn:hover {
+        background-color: #2c2c2c;
+        color: #f0f0f0;
+    }
+    
+    .markdown-editor {
+        font-family: 'Fira Code', 'Consolas', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        resize: vertical;
+        min-height: 400px;
+    }
+    
+    .preview-container {
+        min-height: 400px;
+        padding: 1rem;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .markdown-content {
+        color: #f0f0f0;
+        line-height: 1.7;
+    }
+    
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4,
+    .markdown-content h5,
+    .markdown-content h6 {
+        color: #00e1d3;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content h1 {
+        font-size: 2rem;
+        border-bottom: 2px solid #2c2c2c;
+        padding-bottom: 0.5rem;
+    }
+    
+    .markdown-content h2 {
+        font-size: 1.5rem;
+    }
+    
+    .markdown-content h3 {
+        font-size: 1.25rem;
+    }
+    
+    .markdown-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content code {
+        background-color: #2c2c2c;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: 'Fira Code', 'Consolas', monospace;
+        font-size: 0.9rem;
+    }
+    
+    .markdown-content pre {
+        background-color: #2c2c2c;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content pre code {
+        background: none;
+        padding: 0;
+    }
+    
+    .markdown-content blockquote {
+        border-left: 4px solid #00e1d3;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #ccc;
+        font-style: italic;
+    }
+    
+    .markdown-content ul,
+    .markdown-content ol {
+        padding-left: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .markdown-content a {
+        color: #00e1d3;
+        text-decoration: none;
+    }
+    
+    .markdown-content a:hover {
+        text-decoration: underline;
     }
     
     .form-actions {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #2c2c2c;
     }
     
-    .action-buttons {
-        justify-content: center;
+    .ml-2 {
+        margin-left: 0.5rem;
     }
     
-    .markdown-help {
-        grid-template-columns: 1fr;
-    }
-}
-</style>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const titleInput = document.getElementById('title');
-    const titleCounter = document.getElementById('titleCounter');
-    const contentEditor = document.getElementById('content');
-    const previewPane = document.getElementById('preview');
-    const previewContent = document.querySelector('.preview-content');
-    const previewBtn = document.getElementById('previewBtn');
-    const publishCheckbox = document.getElementById('is_published');
-    const submitText = document.getElementById('submitText');
-    
-    // Счетчик символов для заголовка
-    titleInput.addEventListener('input', function() {
-        titleCounter.textContent = this.value.length;
-        if (this.value.length > 240) {
-            titleCounter.style.color = '#ff6b6b';
-        } else {
-            titleCounter.style.color = '#888';
+    @media (max-width: 768px) {
+        .create-article-container {
+            padding: 0 1rem;
         }
-    });
-    
-    // Изменение текста кнопки в зависимости от статуса публикации
-    publishCheckbox.addEventListener('change', function() {
-        submitText.textContent = this.checked ? 'Опубликовать статью' : 'Сохранить черновик';
-    });
-    
-    // Превью функциональность
-    let isPreviewMode = false;
-    
-    function togglePreview() {
-        isPreviewMode = !isPreviewMode;
         
-        if (isPreviewMode) {
-            const content = contentEditor.value;
-            previewContent.innerHTML = renderMarkdown(content);
-            contentEditor.style.display = 'none';
-            previewPane.style.display = 'block';
-            previewBtn.textContent = '✏️ Редактор';
-            previewBtn.classList.add('active');
-        } else {
-            contentEditor.style.display = 'block';
-            previewPane.style.display = 'none';
-            previewBtn.textContent = '👁️ Превью';
-            previewBtn.classList.remove('active');
+        .header-section h1 {
+            font-size: 2rem;
+        }
+        
+        .form-actions .flex {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .tabs-nav {
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .tab-btn {
+            text-align: left;
+            border-bottom: none;
+            border-left: 2px solid transparent;
+        }
+        
+        .tab-btn.active {
+            border-left-color: #00e1d3;
+            border-bottom-color: transparent;
+        }
+        
+        .markdown-toolbar {
+            flex-wrap: wrap;
         }
     }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentTab = 'edit';
     
-    // Простой Markdown рендерер
-    function renderMarkdown(text) {
-        return text
-            .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-            .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-            .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code>$1</code>')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-            .replace(/^- (.*$)/gm, '<li>$1</li>')
-            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-            .replace(/\n\n/g, '</p><p>')
-            .replace(/^(.*)$/gm, '<p>$1</p>')
-            .replace(/<p><\/p>/g, '');
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        // Счетчики символов
+        setupCharCounters();
+        
+        // Автосохранение
+        setupAutoSave();
+        
+        // Обновление превью
+        document.getElementById('content').addEventListener('input', updatePreview);
+        
+        // Валидация формы
+        document.getElementById('article-form').addEventListener('submit', validateForm);
+    });
+    
+    // Переключение вкладок
+    function switchTab(tabName) {
+        // Скрываем все вкладки
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Убираем активность с кнопок
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Показываем нужную вкладку
+        document.getElementById(tabName + '-tab').classList.add('active');
+        document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        
+        currentTab = tabName;
+        
+        // Обновляем превью при переключении
+        if (tabName === 'preview') {
+            updatePreview();
+        }
     }
     
     // Вставка Markdown
     function insertMarkdown(before, after) {
-        const textarea = contentEditor;
+        const textarea = document.getElementById('content');
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const selectedText = textarea.value.substring(start, end);
-        const newText = before + selectedText + after;
         
+        const newText = before + selectedText + after;
         textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+        
+        // Устанавливаем курсор
+        const newCursorPos = start + before.length + selectedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
         textarea.focus();
-        textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length);
+        
+        updatePreview();
     }
     
-    // Делаем функции глобальными
-    window.togglePreview = togglePreview;
-    window.insertMarkdown = insertMarkdown;
-});
+    // Обновление превью
+    function updatePreview() {
+        const content = document.getElementById('content').value;
+        const preview = document.getElementById('markdown-preview');
+        
+        if (!content.trim()) {
+            preview.innerHTML = '<p class="text-muted">Напишите содержание статьи, чтобы увидеть превью</p>';
+            return;
+        }
+        
+        // Простая обработка Markdown
+        let html = content
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+            .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+            .replace(/\*(.*)\*/gim, '<em>$1</em>')
+            .replace(/`([^`]+)`/gim, '<code>$1</code>')
+            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+            .replace(/^- (.*$)/gim, '<li>$1</li>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2">$1</a>')
+            .replace(/\n/gim, '<br>');
+        
+        // Обертываем списки
+        html = html.replace(/(<li>.*<\/li>)/gim, '<ul>$1</ul>');
+        
+        preview.innerHTML = html;
+    }
+    
+    // Настройка счетчиков символов
+    function setupCharCounters() {
+        const counters = [
+            { input: 'title', counter: 'titleCounter', max: 256 },
+            { input: 'preview_text', counter: 'previewCounter', max: 500 },
+            { input: 'content', counter: 'contentCounter', max: null }
+        ];
+        
+        counters.forEach(({ input, counter, max }) => {
+            const inputElement = document.getElementById(input);
+            const counterElement = document.getElementById(counter);
+            
+            inputElement.addEventListener('input', function() {
+                const length = this.value.length;
+                counterElement.textContent = length;
+                
+                if (max && length > max * 0.9) {
+                    counterElement.style.color = '#ff4757';
+                } else {
+                    counterElement.style.color = '#999';
+                }
+            });
+        });
+    }
+    
+    // Автосохранение
+    function setupAutoSave() {
+        const form = document.getElementById('article-form');
+        const inputs = form.querySelectorAll('input, textarea, select');
+        
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                clearTimeout(this.autoSaveTimeout);
+                this.autoSaveTimeout = setTimeout(() => {
+                    saveToLocalStorage();
+                }, 2000);
+            });
+        });
+        
+        // Загрузка из localStorage
+        loadFromLocalStorage();
+    }
+    
+    // Сохранение в localStorage
+    function saveToLocalStorage() {
+        const formData = {
+            title: document.getElementById('title').value,
+            preview_text: document.getElementById('preview_text').value,
+            content: document.getElementById('content').value,
+            category_id: document.getElementById('category_id').value,
+            tags: document.getElementById('tags').value,
+            is_published: document.getElementById('is_published').checked,
+            is_pinned: document.getElementById('is_pinned').checked,
+            timestamp: Date.now()
+        };
+        
+        localStorage.setItem('article_draft', JSON.stringify(formData));
+        showToast('Черновик сохранен автоматически', 'info');
+    }
+    
+    // Загрузка из localStorage
+    function loadFromLocalStorage() {
+        const saved = localStorage.getItem('article_draft');
+        if (!saved) return;
+        
+        const data = JSON.parse(saved);
+        
+        // Проверяем, что данные не старше 24 часов
+        if (Date.now() - data.timestamp > 24 * 60 * 60 * 1000) {
+            localStorage.removeItem('article_draft');
+            return;
+        }
+        
+        // Восстанавливаем данные
+        document.getElementById('title').value = data.title || '';
+        document.getElementById('preview_text').value = data.preview_text || '';
+        document.getElementById('content').value = data.content || '';
+        document.getElementById('category_id').value = data.category_id || '';
+        document.getElementById('tags').value = data.tags || '';
+        document.getElementById('is_published').checked = data.is_published !== false;
+        document.getElementById('is_pinned').checked = data.is_pinned || false;
+        
+        // Обновляем счетчики
+        document.querySelectorAll('input, textarea').forEach(input => {
+            input.dispatchEvent(new Event('input'));
+        });
+        
+        showToast('Восстановлен сохраненный черновик', 'success');
+    }
+    
+    // Валидация формы
+    function validateForm(e) {
+        let isValid = true;
+        
+        // Очищаем предыдущие ошибки
+        document.querySelectorAll('.form-error').forEach(error => {
+            error.textContent = '';
+        });
+        
+        // Проверка заголовка
+        const title = document.getElementById('title').value.trim();
+        if (!title) {
+            document.getElementById('title-error').textContent = 'Заголовок обязателен';
+            isValid = false;
+        } else if (title.length < 5) {
+            document.getElementById('title-error').textContent = 'Заголовок должен содержать минимум 5 символов';
+            isValid = false;
+        }
+        
+        // Проверка содержания
+        const content = document.getElementById('content').value.trim();
+        if (!content) {
+            document.getElementById('content-error').textContent = 'Содержание статьи обязательно';
+            isValid = false;
+        } else if (content.length < 100) {
+            document.getElementById('content-error').textContent = 'Содержание должно содержать минимум 100 символов';
+            isValid = false;
+        }
+        
+        // Проверка категории
+        const category = document.getElementById('category_id').value;
+        if (!category) {
+            document.getElementById('category-error').textContent = 'Выберите категорию';
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            showToast('Исправьте ошибки в форме', 'error');
+        } else {
+            // Очищаем localStorage при успешной отправке
+            localStorage.removeItem('article_draft');
+        }
+    }
+    
+    // Сохранение черновика
+    function saveDraft() {
+        document.getElementById('is_published').checked = false;
+        document.getElementById('article-form').submit();
+    }
+    
+    // Предпросмотр статьи
+    function previewArticle() {
+        switchTab('preview');
+        updatePreview();
+    }
+    
+    // Горячие клавиши
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case 's':
+                    e.preventDefault();
+                    saveToLocalStorage();
+                    break;
+                case 'b':
+                    e.preventDefault();
+                    insertMarkdown('**', '**');
+                    break;
+                case 'i':
+                    e.preventDefault();
+                    insertMarkdown('*', '*');
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    document.getElementById('article-form').submit();
+                    break;
+            }
+        }
+    });
 </script>
+{% endblock %}
 {% endblock %} 

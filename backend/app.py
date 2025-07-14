@@ -1348,7 +1348,6 @@ def get_popular_tags():
     # Получаем теги с количеством постов
     popular_tags = db.session.query(Tag, db.func.count(Post.id).label('post_count'))\
         .join(Post.tags)\
-        .join(Post, Post.id == Post.id)\
         .filter(Post.is_published == True, Post.is_deleted == False)\
         .group_by(Tag.id)\
         .order_by(db.func.count(Post.id).desc())\
@@ -1385,4 +1384,4 @@ def get_tag_suggestions():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

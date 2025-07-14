@@ -1,264 +1,814 @@
 {% extends 'base.html' %}
 
+{% block title %}Моя лента - WorkNest{% endblock %}
+
 {% block content %}
-<div class="personalized-feed-container" style="max-width: 1200px; margin: 0 auto; padding: 20px;">
-    <div class="feed-header" style="background: rgba(255,255,255,0.9); border-radius: 18px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
-        <h1 style="color: #187a6e; font-size: 1.8em; margin-bottom: 16px; text-align: center;">
-            🎯 Персонализированная лента
-        </h1>
-        <p style="text-align: center; color: #666; margin-bottom: 20px;">
-            Посты от авторов и тегов, на которые вы подписаны
-        </p>
+<div class="personalized-feed-container fade-in">
+    <!-- Заголовок -->
+    <div class="feed-header">
+        <h1>🎯 Моя персонализированная лента</h1>
+        <p class="text-muted">Посты от авторов и тегов, на которые вы подписаны</p>
+    </div>
+
+    <!-- Подписки на теги -->
+    <div class="card subscriptions-card mb-4">
+        <div class="flex flex-center mb-3">
+            <div style="width: 3px; height: 24px; background: linear-gradient(45deg, #00e1d3, #00b8cc); border-radius: 2px; margin-right: 12px;"></div>
+            <h3 class="mb-0">Ваши подписки на теги</h3>
+        </div>
         
-        <!-- Подписки на теги -->
-        <div class="subscribed-tags" style="text-align: center;">
-            <h3 style="color: #187a6e; margin-bottom: 12px;">Ваши подписки на теги:</h3>
-            <div class="tags-list" style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;">
-                {% if subscribed_tags %}
+        <div class="subscribed-tags">
+            {% if subscribed_tags %}
+                <div class="tags-list">
                     {% for tag in subscribed_tags %}
-                        <span class="tag-badge" style="background: {{ tag.color }}; color: white; padding: 6px 12px; border-radius: 16px; font-size: 0.9em; display: inline-flex; align-items: center; gap: 8px;">
-                            #{{ tag.name }}
-                            <button onclick="unsubscribeFromTag({{ tag.id }})" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2em; padding: 0; margin: 0;">×</button>
-                        </span>
+                        <div class="tag-subscription">
+                            <span class="tag tag-with-unsubscribe">
+                                #{{ tag.name }}
+                                <button onclick="unsubscribeFromTag({{ tag.id }})" class="tag-unsubscribe" title="Отписаться">
+                                    ×
+                                </button>
+                            </span>
+                        </div>
                     {% endfor %}
-                {% else %}
-                    <p style="color: #666; font-style: italic;">
-                        Вы пока не подписаны ни на один тег. 
-                        <a href="/feed" style="color: #4db6e2;">Найдите интересные теги</a> и подпишитесь на них!
+                </div>
+                <p class="text-muted mt-2">
+                    💡 Нажмите на крестик, чтобы отписаться от тега
+                </p>
+            {% else %}
+                <div class="empty-subscriptions">
+                    <div class="empty-state-icon">🏷️</div>
+                    <h4>Вы пока не подписаны ни на один тег</h4>
+                    <p class="text-muted">
+                        Подпишитесь на интересные теги, чтобы получать персонализированный контент
                     </p>
-                {% endif %}
-            </div>
+                    <div class="flex flex-gap mt-3">
+                        <a href="/feed" class="btn btn-primary">
+                            <span>🔍</span> Найти теги
+                        </a>
+                        <a href="/articles" class="btn btn-outline">
+                            <span>📚</span> Смотреть статьи
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
 
-    <div class="feed-content" style="display: grid; grid-template-columns: 1fr 300px; gap: 24px;">
+    <div class="feed-layout">
         <!-- Основная лента -->
         <div class="main-feed">
             {% if posts %}
-                {% for post in posts %}
-                    <div class="post-card" style="background: rgba(255,255,255,0.9); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
-                        <!-- Заголовок поста -->
-                        <div class="post-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                            <div class="author-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #fafdff; overflow: hidden;">
-                                <img src="/static/{{ post.user.avatar or 'img/profile_user_svg.svg' }}" alt="Аватар" style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <div class="post-info" style="flex: 1;">
-                                <div class="author-name" style="font-weight: 600; color: #187a6e;">
-                                    <a href="/user/{{ post.user.username }}" style="text-decoration: none; color: inherit;">
-                                        {{ post.user.username }}
-                                    </a>
+                <div class="posts-list">
+                    {% for post in posts %}
+                        <article class="card post-card fade-in">
+                            <!-- Заголовок поста -->
+                            <div class="post-header mb-3">
+                                <div class="flex flex-center flex-gap">
+                                    <div class="author-avatar">
+                                        {% if post.user.avatar %}
+                                            <img src="/static/avatars/{{ post.user.avatar }}" alt="Аватар {{ post.user.username }}" class="avatar-img">
+                                        {% else %}
+                                            <div class="avatar-placeholder">
+                                                {{ post.user.username[0].upper() }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="post-info">
+                                        <div class="author-name">
+                                            <a href="/user/{{ post.user.username }}">{{ post.user.username }}</a>
+                                        </div>
+                                        <div class="post-date">
+                                            📅 {{ post.created_at.strftime('%d.%m.%Y в %H:%M') }}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="post-date" style="color: #666; font-size: 0.9em;">
-                                    {{ post.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                
+                                <!-- Источник поста -->
+                                <div class="post-source">
+                                    {% if post.user in followed_users %}
+                                        <span class="source-badge source-author">👤 Подписка</span>
+                                    {% endif %}
+                                    {% for tag in post.tags if tag in subscribed_tags %}
+                                        <span class="source-badge source-tag">#{{ tag.name }}</span>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            {% if post.category %}
-                                <div class="category-badge" style="background: {{ post.category.color }}; color: white; padding: 4px 8px; border-radius: 8px; font-size: 0.8em;">
-                                    {{ post.category.icon }} {{ post.category.name }}
+
+                            <!-- Содержание поста -->
+                            <div class="post-content mb-3">
+                                <div class="post-text">
+                                    {% if post.content|length > 300 %}
+                                        {{ post.content[:300]|safe }}...
+                                        <a href="/post/{{ post.id }}" class="read-more">читать далее</a>
+                                    {% else %}
+                                        {{ post.content|safe }}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Изображение -->
+                            {% if post.image_filename %}
+                                <div class="post-image mb-3">
+                                    <img src="/static/uploads/{{ post.image_filename }}" alt="Изображение к посту" class="post-img">
                                 </div>
                             {% endif %}
-                        </div>
 
-                        <!-- Содержимое поста -->
-                        <div class="post-content" style="margin-bottom: 16px; line-height: 1.6;">
-                            {{ post.content|safe }}
-                        </div>
+                            <!-- Теги -->
+                            {% if post.tags %}
+                                <div class="post-tags mb-3">
+                                    {% for tag in post.tags %}
+                                        <a href="/tag/{{ tag.id }}" class="tag tag-clickable">
+                                            #{{ tag.name }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
 
-                        <!-- Теги поста -->
-                        {% if post.tags %}
-                            <div class="post-tags" style="margin-bottom: 16px;">
-                                {% for tag in post.tags %}
-                                    <a href="/tag/{{ tag.id }}" class="tag-link" style="display: inline-block; background: {{ tag.color }}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; text-decoration: none; margin-right: 8px; margin-bottom: 4px;">
-                                        #{{ tag.name }}
-                                    </a>
-                                {% endfor %}
+                            <!-- Действия -->
+                            <div class="post-actions">
+                                <div class="actions-left">
+                                    {% if current_user %}
+                                        <button class="action-btn like-btn" onclick="toggleLike({{ post.id }})">
+                                            <span class="action-icon">{{ '❤️' if post.is_liked_by(current_user) else '🤍' }}</span>
+                                            <span class="action-count">{{ post.likes_count }}</span>
+                                        </button>
+                                        <button class="action-btn comment-btn" onclick="toggleComments({{ post.id }})">
+                                            <span class="action-icon">💬</span>
+                                            <span class="action-count">{{ post.comments|length }}</span>
+                                        </button>
+                                    {% else %}
+                                        <span class="action-btn disabled">
+                                            <span class="action-icon">🤍</span>
+                                            <span class="action-count">{{ post.likes_count }}</span>
+                                        </span>
+                                        <span class="action-btn disabled">
+                                            <span class="action-icon">💬</span>
+                                            <span class="action-count">{{ post.comments|length }}</span>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="actions-right">
+                                    <span class="reading-time">
+                                        📖 {{ (post.content|length / 200)|round|int }} мин
+                                    </span>
+                                </div>
                             </div>
-                        {% endif %}
 
-                        <!-- Действия с постом -->
-                        <div class="post-actions" style="display: flex; align-items: center; gap: 16px; padding-top: 16px; border-top: 1px solid #eee;">
-                            <button class="like-btn" onclick="toggleLike({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <span>👍</span>
-                                <span id="likes-count-{{ post.id }}">{{ post.likes_count or 0 }}</span>
-                            </button>
-                            <button class="comment-btn" onclick="toggleComments({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                <span>💬</span>
-                                <span>{{ post.comments|length }}</span>
-                            </button>
-                            <button class="share-btn" onclick="sharePost({{ post.id }})" style="background: none; border: none; color: #666; cursor: pointer;">
-                                <span>🔗</span>
-                            </button>
-                        </div>
-                    </div>
-                {% endfor %}
+                            <!-- Комментарии -->
+                            <div id="comments-{{ post.id }}" class="post-comments hidden">
+                                {% if post.comments %}
+                                    <div class="comments-list">
+                                        {% for comment in post.comments[:3] %}
+                                            <div class="comment-item">
+                                                <div class="comment-header">
+                                                    <strong class="comment-author">{{ comment.user.username }}</strong>
+                                                    <span class="comment-date">{{ comment.created_at.strftime('%d.%m %H:%M') }}</span>
+                                                </div>
+                                                <div class="comment-content">{{ comment.content }}</div>
+                                            </div>
+                                        {% endfor %}
+                                        {% if post.comments|length > 3 %}
+                                            <p class="more-comments">
+                                                и еще {{ post.comments|length - 3 }} комментариев...
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                
+                                {% if current_user %}
+                                    <form class="comment-form" onsubmit="addComment(event, {{ post.id }})">
+                                        <div class="flex flex-gap">
+                                            <input type="text" placeholder="Написать комментарий..." class="form-input comment-input" required>
+                                            <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+                                        </div>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
             {% else %}
-                <div class="empty-feed" style="text-align: center; padding: 60px 20px; color: #666;">
-                    <div style="font-size: 3em; margin-bottom: 20px;">📭</div>
-                    <h3 style="margin-bottom: 16px;">Лента пуста</h3>
-                    <p style="margin-bottom: 20px;">
-                        Подпишитесь на интересных авторов и теги, чтобы увидеть их посты здесь.
-                    </p>
-                    <div style="display: flex; gap: 12px; justify-content: center;">
-                        <a href="/feed" style="background: linear-gradient(90deg, #3ec6b0 0%, #4db6e2 100%); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600;">
-                            Найти посты
+                <!-- Пустое состояние -->
+                <div class="empty-feed">
+                    <div class="empty-state-icon">📭</div>
+                    <h3 class="empty-state-title">Ваша лента пуста</h3>
+                    <div class="empty-state-description">
+                        {% if subscribed_tags %}
+                            <p>Пока нет новых постов по вашим подпискам.</p>
+                            <p>Попробуйте подписаться на больше тегов или авторов.</p>
+                        {% else %}
+                            <p>Чтобы увидеть персонализированный контент:</p>
+                            <ul class="empty-suggestions">
+                                <li>🏷️ Подпишитесь на интересные теги</li>
+                                <li>👥 Найдите и подпишитесь на авторов</li>
+                                <li>📚 Изучите статьи в разных категориях</li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                    <div class="empty-actions">
+                        <a href="/feed" class="btn btn-primary">
+                            <span>🔍</span> Найти контент
                         </a>
-                        <a href="/search" style="background: #f8f9fa; color: #187a6e; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; border: 2px solid #187a6e;">
-                            Найти пользователей
+                        <a href="/search" class="btn btn-outline">
+                            <span>👥</span> Найти авторов
                         </a>
                     </div>
                 </div>
             {% endif %}
         </div>
 
-        <!-- Боковая панель -->
-        <div class="sidebar">
+        <!-- Сайдбар -->
+        <div class="sidebar-container">
             <!-- Популярные теги -->
-            <div class="popular-tags-widget" style="background: rgba(255,255,255,0.9); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
-                <h3 style="color: #187a6e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                    🔥 Популярные теги
-                </h3>
-                <div id="popular-tags-list">
-                    <div class="loading" style="text-align: center; color: #666;">Загрузка...</div>
+            <div class="sidebar">
+                <h4 class="sidebar-title">Популярные теги</h4>
+                <div class="popular-tags" id="popular-tags">
+                    <div class="loading-placeholder">
+                        <div class="loading"></div>
+                        <p>Загрузка тегов...</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Подсказки -->
-            <div class="tips-widget" style="background: rgba(255,255,255,0.9); border-radius: 16px; padding: 20px; box-shadow: 0 4px 24px rgba(44,62,80,0.10);">
-                <h3 style="color: #187a6e; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                    💡 Подсказки
-                </h3>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
-                        <strong>Подписки на теги:</strong> Нажмите на тег в любом посте, чтобы подписаться
-                    </li>
-                    <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
-                        <strong>Поиск:</strong> Используйте # для поиска по тегам
-                    </li>
-                    <li style="padding: 8px 0;">
-                        <strong>Персонализация:</strong> Чем больше подписок, тем интереснее лента
-                    </li>
-                </ul>
+            <!-- Рекомендации -->
+            <div class="sidebar">
+                <h4 class="sidebar-title">Рекомендации</h4>
+                <div class="recommendations">
+                    <div class="recommendation-item">
+                        <div class="rec-icon">🎯</div>
+                        <div class="rec-content">
+                            <h5>Персонализируйте ленту</h5>
+                            <p>Подпишитесь на теги, которые вас интересуют</p>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <div class="rec-icon">👥</div>
+                        <div class="rec-content">
+                            <h5>Найдите единомышленников</h5>
+                            <p>Ищите авторов по интересам</p>
+                        </div>
+                    </div>
+                    <div class="recommendation-item">
+                        <div class="rec-icon">📝</div>
+                        <div class="rec-content">
+                            <h5>Создавайте контент</h5>
+                            <p>Делитесь своими знаниями</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-// Загрузка популярных тегов
-document.addEventListener('DOMContentLoaded', function() {
-    loadPopularTags();
-});
-
-async function loadPopularTags() {
-    try {
-        const response = await fetch('/api/popular_tags');
-        const tags = await response.json();
-        
-        const container = document.getElementById('popular-tags-list');
-        if (tags.length > 0) {
-            container.innerHTML = tags.map(tag => `
-                <div class="popular-tag" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
-                    <a href="/tag/${tag.id}" style="color: ${tag.color}; text-decoration: none; font-weight: 600;">
-                        #${tag.name}
-                    </a>
-                    <span style="color: #666; font-size: 0.9em;">${tag.post_count} постов</span>
-                </div>
-            `).join('');
-        } else {
-            container.innerHTML = '<p style="color: #666; font-style: italic;">Нет популярных тегов</p>';
-        }
-    } catch (error) {
-        console.error('Ошибка загрузки популярных тегов:', error);
-        document.getElementById('popular-tags-list').innerHTML = '<p style="color: #e53935;">Ошибка загрузки</p>';
-    }
-}
-
-// Отписка от тега
-async function unsubscribeFromTag(tagId) {
-    try {
-        const response = await fetch(`/unsubscribe_tag/${tagId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            location.reload(); // Перезагружаем страницу для обновления ленты
-        } else {
-            alert(data.message || 'Ошибка отписки');
-        }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Ошибка соединения');
-    }
-}
-
-// Лайк поста
-async function toggleLike(postId) {
-    try {
-        const response = await fetch(`/like_post/${postId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            const countElement = document.getElementById(`likes-count-${postId}`);
-            countElement.textContent = data.likes_count;
-        }
-    } catch (error) {
-        console.error('Ошибка:', error);
-    }
-}
-
-// Показать/скрыть комментарии
-function toggleComments(postId) {
-    // Эта функция будет реализована позже
-    console.log('Toggle comments for post', postId);
-}
-
-// Поделиться постом
-function sharePost(postId) {
-    const url = `${window.location.origin}/post/${postId}`;
-    navigator.clipboard.writeText(url).then(() => {
-        alert('Ссылка скопирована в буфер обмена!');
-    });
-}
-</script>
-
+{% block extra_css %}
 <style>
-.tag-badge:hover {
-    opacity: 0.8;
-}
-
-.popular-tag:hover {
-    background: #f8f9fa;
-}
-
-.post-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(44,62,80,0.15);
-    transition: all 0.3s ease;
-}
-
-.like-btn:hover, .comment-btn:hover, .share-btn:hover {
-    color: #4db6e2;
-}
-
-@media (max-width: 768px) {
-    .feed-content {
-        grid-template-columns: 1fr;
+    .personalized-feed-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
     }
     
-    .sidebar {
-        order: -1;
+    .feed-header {
+        text-align: center;
+        margin-bottom: 2rem;
     }
-}
+    
+    .feed-header h1 {
+        font-size: 2.5rem;
+        color: #f0f0f0;
+        margin-bottom: 1rem;
+    }
+    
+    .subscriptions-card {
+        position: relative;
+        overflow: visible;
+    }
+    
+    .subscriptions-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #00e1d3, #00b8cc);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .tags-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .tag-with-unsubscribe {
+        position: relative;
+        padding-right: 2rem;
+    }
+    
+    .tag-unsubscribe {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: 0;
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .tag-unsubscribe:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .empty-subscriptions {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+    
+    .empty-subscriptions .empty-state-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-subscriptions h4 {
+        color: #f0f0f0;
+        margin-bottom: 1rem;
+    }
+    
+    .feed-layout {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 2rem;
+    }
+    
+    .main-feed {
+        min-height: 400px;
+    }
+    
+    .post-card {
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .post-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 225, 211, 0.15);
+    }
+    
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .author-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    
+    .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #00e1d3, #00b8cc);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .post-info {
+        flex: 1;
+    }
+    
+    .author-name a {
+        color: #00e1d3;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    
+    .author-name a:hover {
+        text-decoration: underline;
+    }
+    
+    .post-date {
+        color: #999;
+        font-size: 0.8rem;
+    }
+    
+    .post-source {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .source-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .source-author {
+        background-color: rgba(0, 225, 211, 0.2);
+        color: #00e1d3;
+    }
+    
+    .source-tag {
+        background-color: rgba(255, 165, 2, 0.2);
+        color: #ffa502;
+    }
+    
+    .post-content {
+        line-height: 1.6;
+    }
+    
+    .read-more {
+        color: #00e1d3;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .read-more:hover {
+        text-decoration: underline;
+    }
+    
+    .post-image {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    
+    .post-img {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+    }
+    
+    .post-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .post-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid #2c2c2c;
+    }
+    
+    .actions-left {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+    }
+    
+    .action-btn:hover:not(.disabled) {
+        background-color: #2c2c2c;
+        color: #f0f0f0;
+    }
+    
+    .action-btn.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    .reading-time {
+        color: #999;
+        font-size: 0.8rem;
+    }
+    
+    .post-comments {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #2c2c2c;
+    }
+    
+    .comments-list {
+        margin-bottom: 1rem;
+    }
+    
+    .comment-item {
+        padding: 0.75rem;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+    }
+    
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .comment-author {
+        color: #00e1d3;
+        font-size: 0.9rem;
+    }
+    
+    .comment-date {
+        color: #999;
+        font-size: 0.8rem;
+    }
+    
+    .comment-content {
+        color: #ccc;
+        font-size: 0.9rem;
+    }
+    
+    .more-comments {
+        color: #999;
+        font-size: 0.8rem;
+        text-align: center;
+        margin: 0.5rem 0;
+    }
+    
+    .comment-form {
+        margin-top: 1rem;
+    }
+    
+    .comment-input {
+        flex: 1;
+    }
+    
+    .empty-feed {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #999;
+    }
+    
+    .empty-feed .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-feed .empty-state-title {
+        color: #f0f0f0;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+    }
+    
+    .empty-suggestions {
+        list-style: none;
+        text-align: left;
+        display: inline-block;
+        margin: 1.5rem 0;
+    }
+    
+    .empty-suggestions li {
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0;
+    }
+    
+    .empty-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .sidebar-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .loading-placeholder {
+        text-align: center;
+        padding: 2rem;
+        color: #999;
+    }
+    
+    .loading-placeholder .loading {
+        margin: 0 auto 1rem;
+    }
+    
+    .recommendations {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .recommendation-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .rec-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    
+    .rec-content h5 {
+        color: #f0f0f0;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .rec-content p {
+        color: #999;
+        font-size: 0.8rem;
+        margin: 0;
+    }
+    
+    /* Мобильная адаптация */
+    @media (max-width: 768px) {
+        .feed-layout {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .feed-header h1 {
+            font-size: 2rem;
+        }
+        
+        .post-header {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .post-actions {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .empty-actions {
+            flex-direction: column;
+        }
+        
+        .tags-list {
+            justify-content: center;
+        }
+        
+        .recommendation-item {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPopularTags();
+    });
+    
+    // Загрузка популярных тегов
+    function loadPopularTags() {
+        fetch('/api/popular_tags')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('popular-tags');
+                if (data.tags && data.tags.length > 0) {
+                    container.innerHTML = data.tags.map(tag => `
+                        <a href="/tag/${tag.id}" class="tag tag-clickable" style="margin-bottom: 0.5rem;">
+                            #${tag.name}
+                            <span style="opacity: 0.7; font-size: 0.8em;">(${tag.count})</span>
+                        </a>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<p class="text-muted">Теги не найдены</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка загрузки тегов:', error);
+                document.getElementById('popular-tags').innerHTML = 
+                    '<p class="text-muted">Ошибка загрузки тегов</p>';
+            });
+    }
+    
+    // Отписка от тега
+    function unsubscribeFromTag(tagId) {
+        fetch(`/unsubscribe_tag/${tagId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Вы отписались от тега', 'success');
+                location.reload();
+            } else {
+                showToast(data.message || 'Ошибка', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка отписки:', error);
+            showToast('Произошла ошибка', 'error');
+        });
+    }
+    
+    // Переключение лайка
+    function toggleLike(postId) {
+        fetch(`/like/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const likeBtn = document.querySelector(`[onclick="toggleLike(${postId})"]`);
+                const icon = likeBtn.querySelector('.action-icon');
+                const count = likeBtn.querySelector('.action-count');
+                
+                icon.textContent = data.liked ? '❤️' : '🤍';
+                count.textContent = data.likes_count;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка лайка:', error);
+        });
+    }
+    
+    // Переключение комментариев
+    function toggleComments(postId) {
+        const comments = document.getElementById(`comments-${postId}`);
+        comments.classList.toggle('hidden');
+    }
+    
+    // Добавление комментария
+    function addComment(event, postId) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const input = form.querySelector('.comment-input');
+        const content = input.value.trim();
+        
+        if (!content) return;
+        
+        fetch(`/comment/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ content: content })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                input.value = '';
+                showToast('Комментарий добавлен', 'success');
+                // Можно обновить список комментариев
+                location.reload();
+            } else {
+                showToast(data.message || 'Ошибка', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка добавления комментария:', error);
+            showToast('Произошла ошибка', 'error');
+        });
+    }
+</script>
+{% endblock %}
 {% endblock %} 

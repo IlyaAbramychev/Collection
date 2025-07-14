@@ -13,781 +13,486 @@
 {% block content %}
 <div class="wall-container fade-in">
     <!-- Заголовок страницы -->
-    <div class="wall-header">
-        <h1>
+    <div class="wall-header mb-4">
+        <div class="flex flex-between flex-center">
+            <h1 class="mb-0">
+                {% if is_global_wall %}
+                    Общая лента
+                {% elif target_user and target_user.id != current_user.id %}
+                    Стена {{ target_user.username }}
+                {% else %}
+                    Моя стена
+                {% endif %}
+            </h1>
+            
             {% if is_global_wall %}
-                Общая лента
-            {% elif target_user and target_user.id != current_user.id %}
-                Стена {{ target_user.username }}
-            {% else %}
-                Моя стена
+                <div class="wall-search">
+                    <form method="get" action="{{ url_for('global_feed') }}" class="flex flex-gap">
+                        <div class="form-group mb-0" style="position: relative;">
+                            <input type="text" 
+                                   name="q" 
+                                   placeholder="🔍 Поиск по тегам..." 
+                                   value="{{ search_query or '' }}"
+                                   class="form-input"
+                                   style="width: 300px; padding-left: 2.5rem;">
+                            <span style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);">🔍</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Найти</button>
+                    </form>
+                </div>
             {% endif %}
-        </h1>
-        
-        {% if is_global_wall %}
-            <div class="wall-search">
-                <form method="get" action="{{ url_for('global_feed') }}">
-                    <input type="text" 
-                           name="q" 
-                           placeholder="Поиск по тегам..." 
-                           value="{{ search_query or '' }}"
-                           class="form-input"
-                           style="width: 300px;">
-                    <button type="submit" class="btn btn-outline">Найти</button>
-                </form>
-            </div>
-        {% endif %}
+        </div>
     </div>
 
     <!-- Форма создания поста -->
     {% if not is_global_wall and (not target_user or target_user.id == current_user.id) %}
-    <div class="card post-form-card">
-        <h3 class="card-title">Создать публикацию</h3>
+    <div class="card post-form-card mb-4" style="border: 2px solid var(--border-color); background: var(--bg-card);">
+        <div class="flex flex-center mb-3">
+            <div style="width: 3px; height: 24px; background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary)); border-radius: 2px; margin-right: 12px;"></div>
+            <h3 class="mb-0">Создать публикацию</h3>
+        </div>
+        
         <form method="POST" action="/wall" enctype="multipart/form-data" class="post-form">
             <div class="form-group">
+                <label for="content" class="form-label">Содержание</label>
                 <textarea name="content" 
-                          class="form-input form-textarea" 
+                          id="content"
+                          class="form-textarea" 
                           placeholder="Поделитесь своими мыслями, исследованиями, открытиями..."
-                          required
-                          style="min-height: 120px;"></textarea>
+                          rows="4"
+                          style="resize: vertical; min-height: 120px;"></textarea>
             </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="image" class="form-label">Изображение (необязательно)</label>
-                    <input type="file" 
-                           id="image" 
-                           name="image" 
-                           class="form-input" 
-                           accept="image/*">
-                </div>
-                <div class="form-group">
-                    <label for="tags" class="form-label">Теги (через запятую)</label>
-                    <input type="text" 
-                           id="tags" 
-                           name="tags" 
-                           class="form-input" 
-                           placeholder="AI, машинное обучение, наука">
-                </div>
-            </div>
-            
+
             <div class="form-group">
-                <label class="form-label">Местоположение (необязательно)</label>
-                <div class="location-input">
-                    <input type="hidden" name="latitude" id="latitude">
-                    <input type="hidden" name="longitude" id="longitude">
-                    <button type="button" class="btn btn-secondary" onclick="getLocation()">
-                        📍 Добавить местоположение
-                    </button>
-                    <span id="location-status" class="text-muted"></span>
+                <label for="tags" class="form-label">Теги</label>
+                <input type="text" 
+                       name="tags" 
+                       id="tags"
+                       class="form-input" 
+                       placeholder="Введите теги через запятую (например: наука, исследование, технологии)"
+                       style="position: relative;">
+                <div class="form-help text-muted" style="font-size: 0.8rem; margin-top: 0.25rem;">
+                    💡 Используйте теги для категоризации вашего поста
                 </div>
             </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Опубликовать</button>
+
+            <div class="form-group">
+                <label for="image" class="form-label">Изображение</label>
+                <div class="file-input-wrapper">
+                    <input type="file" 
+                           name="image" 
+                           id="image"
+                           accept="image/*"
+                           class="file-input"
+                           onchange="previewImage(this)">
+                    <label for="image" class="file-input-label">
+                        <span>Выбрать файл</span>
+                    </label>
+                </div>
+                <div class="form-help text-muted" style="font-size: 0.8rem; margin-top: 0.25rem;">
+                    📸 Поддерживаются форматы: JPG, PNG, GIF (макс. 5MB)
+                </div>
+                
+                <!-- Превью изображения -->
+                <div id="image-preview" class="mt-2 hidden">
+                    <img id="preview-img" style="max-width: 100%; max-height: 200px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <button type="button" onclick="removeImage()" class="btn btn-sm btn-outline mt-1">Удалить</button>
+                </div>
+            </div>
+
+            <div class="form-actions flex flex-between flex-center">
+                <div class="flex flex-gap">
+                    <button type="submit" class="btn btn-primary">
+                        <span>📝</span>
+                        Опубликовать
+                    </button>
+                    <button type="button" onclick="clearForm()" class="btn btn-secondary">
+                        <span>🗑️</span>
+                        Очистить
+                    </button>
+                </div>
+                
+                <div class="text-muted" style="font-size: 0.8rem;">
+                    <span id="char-count">0</span> символов
+                </div>
             </div>
         </form>
     </div>
     {% endif %}
 
     <!-- Список постов -->
-    <div class="posts-container">
-        {% if posts %}
+    {% if posts %}
+        <div class="posts-list">
             {% for post in posts %}
                 <article class="card post-card fade-in">
                     <!-- Заголовок поста -->
-                    <div class="post-header">
-                        <div class="post-author">
-                            {% if post.user.avatar %}
-                                <img src="{{ url_for('static', filename=post.user.avatar) }}" 
-                                     alt="Аватар" 
-                                     class="post-avatar">
-                            {% else %}
-                                <div class="post-avatar-placeholder">
-                                    {{ post.user.username[0].upper() }}
+                    <div class="post-header flex flex-between flex-center mb-3">
+                        <div class="flex flex-center flex-gap">
+                            <div class="user-avatar">
+                                {% if post.user.avatar %}
+                                    <img src="{{ url_for('static', filename='avatars/' + post.user.avatar) }}" 
+                                         alt="Аватар {{ post.user.username }}"
+                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                {% else %}
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--accent-primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                        {{ post.user.username[0].upper() }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="flex flex-center flex-gap">
+                                    <strong style="color: var(--accent-primary);">
+                                        <a href="/user/{{ post.user.username }}" style="text-decoration: none; color: inherit;">
+                                            {{ post.user.username }}
+                                        </a>
+                                    </strong>
+                                    {% if post.user.full_name %}
+                                        <span class="text-muted">({{ post.user.full_name }})</span>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
-                            <div class="post-author-info">
-                                <h4>
-                                    <a href="/user/{{ post.user.username }}" class="post-author-name">
-                                        {{ post.user.full_name or post.user.username }}
-                                    </a>
-                                </h4>
-                                <p class="post-meta">
-                                    @{{ post.user.username }} • {{ post.created_at.strftime('%d.%m.%Y в %H:%M') }}
-                                </p>
+                                <div class="meta">
+                                    <span>📅 {{ post.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
+                                </div>
                             </div>
                         </div>
                         
+                        <!-- Действия поста -->
                         {% if current_user and current_user.id == post.user.id %}
-                            <div class="post-actions-menu">
-                                <button class="btn btn-secondary post-menu-btn" onclick="togglePostMenu({{ post.id }})">
-                                    ⋮
+                            <div class="post-actions">
+                                <button class="btn btn-sm btn-outline" onclick="editPost({{ post.id }})">
+                                    ✏️ Редактировать
                                 </button>
-                                <div class="post-menu" id="post-menu-{{ post.id }}">
-                                    <button onclick="editPost({{ post.id }})" class="post-menu-item">
-                                        ✏️ Редактировать
-                                    </button>
-                                    <button onclick="deletePost({{ post.id }})" class="post-menu-item delete">
-                                        🗑️ Удалить
-                                    </button>
-                                </div>
                             </div>
                         {% endif %}
                     </div>
 
-                    <!-- Содержимое поста -->
-                    <div class="post-content">
-                        <div class="post-text">
+                    <!-- Содержание поста -->
+                    <div class="post-content mb-3">
+                        <div class="content-text">
                             {{ post.content|safe }}
                         </div>
-                        
-                        {% if post.image_path %}
-                            <div class="post-image">
-                                <img src="{{ url_for('static', filename=post.image_path) }}" 
-                                     alt="Изображение к посту"
-                                     onclick="openImageModal(this.src)">
-                            </div>
-                        {% endif %}
-                        
-                        {% if post.latitude and post.longitude %}
-                            <div class="post-location">
-                                📍 Местоположение: {{ post.latitude }}, {{ post.longitude }}
-                            </div>
-                        {% endif %}
-                        
-                        {% if post.tags %}
-                            <div class="post-tags">
-                                {% for tag in post.tags %}
-                                    <span class="post-tag">#{{ tag.name }}</span>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
                     </div>
+
+                    <!-- Теги -->
+                    {% if post.tags %}
+                        <div class="post-tags mb-3">
+                            {% for tag in post.tags %}
+                                <a href="/tag/{{ tag.id }}" class="tag tag-clickable">
+                                    #{{ tag.name }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Изображение -->
+                    {% if post.image_filename %}
+                        <div class="post-image mb-3">
+                            <img src="{{ url_for('static', filename='uploads/' + post.image_filename) }}" 
+                                 alt="Изображение к посту" 
+                                 style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-md); cursor: pointer;"
+                                 onclick="openImageModal(this.src)">
+                        </div>
+                    {% endif %}
 
                     <!-- Действия с постом -->
-                    <div class="post-footer">
-                        <div class="post-stats">
-                            {% if current_user %}
-                                <button class="post-action like-btn {{ 'liked' if post.id in user_liked_posts else '' }}" 
-                                        data-post-id="{{ post.id }}">
-                                    <span class="like-count">{{ post.likes|length }}</span> ❤️
-                                </button>
-                            {% else %}
-                                <span class="post-stat">{{ post.likes|length }} ❤️</span>
-                            {% endif %}
-                            
-                            <button class="post-action comment-btn" onclick="toggleComments({{ post.id }})">
-                                {{ post.comments|length }} 💬
-                            </button>
-                            
-                            <span class="post-stat">{{ post.views or 0 }} 👁️</span>
-                        </div>
-                        
-                        {% if current_user %}
-                            <button class="btn btn-outline" onclick="toggleComments({{ post.id }})">
-                                Комментировать
-                            </button>
-                        {% endif %}
-                    </div>
+                                         <div class="post-actions-bar flex flex-between flex-center mb-3" style="border-top: 1px solid #2c2c2c; padding-top: 1rem;">
+                         <div class="flex flex-gap">
+                             <!-- Лайки -->
+                             {% if current_user %}
+                                 <form method="POST" action="/like/{{ post.id }}" style="display: inline;">
+                                     <button type="submit" class="btn btn-sm btn-outline" style="border: none; background: none; color: #999; padding: 0.25rem 0.5rem;">
+                                         {% if post.is_liked_by(current_user) %}
+                                             <span style="color: #ff4757;">❤️</span>
+                                         {% else %}
+                                             🤍
+                                         {% endif %}
+                                         <span>{{ post.likes_count }}</span>
+                                     </button>
+                                 </form>
+                             {% else %}
+                                 <span class="text-muted">🤍 {{ post.likes_count }}</span>
+                             {% endif %}
+                             
+                             <!-- Комментарии -->
+                             <button class="btn btn-sm btn-outline" onclick="toggleComments({{ post.id }})" style="border: none; background: none; color: #999; padding: 0.25rem 0.5rem;">
+                                 💬 {{ post.comments|length }}
+                             </button>
+                             
+                             <!-- Поделиться -->
+                             <button class="btn btn-sm btn-outline" onclick="sharePost({{ post.id }})" style="border: none; background: none; color: #999; padding: 0.25rem 0.5rem;">
+                                 📤 Поделиться
+                             </button>
+                         </div>
+                         
+                         <!-- Время чтения -->
+                         <span class="text-muted">
+                             📖 {{ (post.content|length / 200)|round|int }} мин чтения
+                         </span>
+                     </div>
 
                     <!-- Комментарии -->
-                    <div class="comments-section" id="comments-{{ post.id }}" style="display: none;">
+                    <div id="comments-{{ post.id }}" class="post-comments" style="display: none;">
+                                                 {% if post.comments %}
+                             <div class="comments-list mb-3">
+                                 {% for comment in post.comments %}
+                                     <div class="comment-item mb-2" style="padding: 0.75rem; background-color: #1e1e1e; border-radius: 6px; border-left: 3px solid #00e1d3;">
+                                         <div class="comment-header flex flex-between mb-1">
+                                             <strong style="color: #00e1d3; font-size: 0.9rem;">
+                                                 {{ comment.user.username }}
+                                             </strong>
+                                             <span class="text-muted" style="font-size: 0.8rem;">
+                                                 {{ comment.created_at.strftime('%d.%m.%Y в %H:%M') }}
+                                             </span>
+                                         </div>
+                                         <p class="comment-content" style="margin: 0; font-size: 0.9rem; color: #ccc;">
+                                             {{ comment.content }}
+                                         </p>
+                                     </div>
+                                 {% endfor %}
+                             </div>
+                         {% endif %}
+                        
+                        <!-- Форма добавления комментария -->
                         {% if current_user %}
-                            <form class="comment-form" onsubmit="addComment(event, {{ post.id }})">
-                                <div class="comment-input-group">
-                                    <textarea placeholder="Написать комментарий..." 
-                                              class="form-input comment-input" 
-                                              rows="3"></textarea>
-                                    <button type="submit" class="btn btn-primary">Отправить</button>
+                            <form method="POST" action="/comment/{{ post.id }}" class="comment-form">
+                                <div class="flex flex-gap">
+                                    <input type="text" 
+                                           name="content" 
+                                           placeholder="Написать комментарий..." 
+                                           class="form-input"
+                                           style="flex: 1;">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        Отправить
+                                    </button>
                                 </div>
                             </form>
                         {% endif %}
-                        
-                        <div class="comments-list" id="comments-list-{{ post.id }}">
-                            <!-- Комментарии будут загружены через AJAX -->
-                        </div>
                     </div>
                 </article>
             {% endfor %}
-        {% else %}
-            <!-- Пустое состояние -->
-            <div class="empty-state">
-                <div class="empty-icon">📝</div>
-                <h3>
-                    {% if is_global_wall %}
-                        Пока нет публикаций в общей ленте
-                    {% elif target_user and target_user.id != current_user.id %}
-                        У {{ target_user.username }} пока нет публикаций
-                    {% else %}
-                        У вас пока нет публикаций
-                    {% endif %}
-                </h3>
-                <p>
-                    {% if not is_global_wall and (not target_user or target_user.id == current_user.id) %}
-                        Создайте свою первую публикацию и поделитесь с сообществом!
-                    {% else %}
-                        Станьте первым, кто опубликует что-то интересное!
-                    {% endif %}
-                </p>
-            </div>
-        {% endif %}
-    </div>
+        </div>
+    {% else %}
+        <!-- Пустое состояние -->
+        <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <h3 class="empty-state-title">
+                {% if is_global_wall %}
+                    Лента пуста
+                {% else %}
+                    Пока нет публикаций
+                {% endif %}
+            </h3>
+            <p class="empty-state-description">
+                {% if is_global_wall %}
+                    Пока никто не поделился своими мыслями
+                {% else %}
+                    Создайте свою первую публикацию!
+                {% endif %}
+            </p>
+            {% if not is_global_wall %}
+                <button onclick="document.getElementById('content').focus()" class="btn btn-primary">
+                    Создать публикацию
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 <!-- Модальное окно для изображений -->
-<div class="image-modal" id="imageModal" onclick="closeImageModal()">
-    <div class="image-modal-content">
-        <img id="modalImage" src="" alt="Увеличенное изображение">
-        <button class="image-modal-close" onclick="closeImageModal()">×</button>
+<div id="image-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeImageModal()">&times;</span>
+        <img id="modal-image" style="max-width: 100%; max-height: 80vh;">
     </div>
 </div>
 
-<!-- Стили для стены -->
+{% block extra_css %}
 <style>
-.wall-container {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.wall-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #2c2c2c;
-}
-
-.wall-header h1 {
-    color: #f0f0f0;
-    font-size: 2rem;
-    margin: 0;
-}
-
-.wall-search {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.post-form-card {
-    margin-bottom: 2rem;
-}
-
-.post-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.location-input {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.posts-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.post-card {
-    position: relative;
-}
-
-.post-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
-
-.post-author {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.post-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #00e1d3;
-}
-
-.post-avatar-placeholder {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(45deg, #00e1d3, #00b8cc);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-.post-author-name {
-    color: #f0f0f0;
-    text-decoration: none;
-    font-weight: 600;
-    transition: color 0.3s ease;
-}
-
-.post-author-name:hover {
-    color: #00e1d3;
-}
-
-.post-meta {
-    color: #888;
-    font-size: 0.9rem;
-    margin: 0;
-}
-
-.post-actions-menu {
-    position: relative;
-}
-
-.post-menu-btn {
-    padding: 0.5rem;
-    font-size: 1.2rem;
-    line-height: 1;
-}
-
-.post-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: #1e1e1e;
-    border: 1px solid #2c2c2c;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 10;
-    min-width: 150px;
-    display: none;
-}
-
-.post-menu.show {
-    display: block;
-}
-
-.post-menu-item {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: none;
-    background: transparent;
-    color: #f0f0f0;
-    text-align: left;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.post-menu-item:hover {
-    background-color: #2c2c2c;
-}
-
-.post-menu-item.delete {
-    color: #ff6b6b;
-}
-
-.post-content {
-    margin-bottom: 1rem;
-}
-
-.post-text {
-    color: #d0d0d0;
-    line-height: 1.6;
-    margin-bottom: 1rem;
-}
-
-.post-image {
-    margin-bottom: 1rem;
-}
-
-.post-image img {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-.post-image img:hover {
-    transform: scale(1.02);
-}
-
-.post-location {
-    color: #888;
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-}
-
-.post-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-}
-
-.post-tag {
-    background: linear-gradient(45deg, #00e1d3, #00b8cc);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.post-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 1rem;
-    border-top: 1px solid #2c2c2c;
-}
-
-.post-stats {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.post-action {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-}
-
-.post-action:hover {
-    background-color: #2c2c2c;
-    color: #f0f0f0;
-}
-
-.like-btn.liked {
-    color: #ff6b6b;
-}
-
-.post-stat {
-    color: #888;
-    font-size: 0.9rem;
-}
-
-.comments-section {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #2c2c2c;
-}
-
-.comment-form {
-    margin-bottom: 1rem;
-}
-
-.comment-input-group {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-end;
-}
-
-.comment-input {
-    flex: 1;
-    resize: vertical;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: #888;
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.empty-state h3 {
-    color: #f0f0f0;
-    margin-bottom: 1rem;
-}
-
-.image-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.image-modal.show {
-    display: flex;
-}
-
-.image-modal-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
-}
-
-.image-modal-content img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.image-modal-close {
-    position: absolute;
-    top: -40px;
-    right: 0;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 2rem;
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-@media (max-width: 768px) {
-    .wall-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+    .wall-container {
+        max-width: 800px;
+        margin: 0 auto;
     }
     
-    .wall-search {
+    .post-form-card {
+        position: relative;
+        overflow: visible;
+    }
+    
+    .post-form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    
+    .post-card {
+        transition: all 0.3s ease;
+    }
+    
+    .post-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+    }
+    
+    .form-help {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
         justify-content: center;
     }
     
-    .post-author {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.5rem;
+    .modal-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
     }
     
-    .post-footer {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+    .close {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
     }
     
-    .comment-input-group {
-        flex-direction: column;
-        gap: 0.5rem;
+    .close:hover {
+        color: var(--accent-primary);
     }
-}
+    
+    @media (max-width: 768px) {
+        .wall-header .flex {
+            flex-direction: column;
+            gap: var(--padding-md);
+        }
+        
+        .wall-search form {
+            width: 100%;
+        }
+        
+        .wall-search input {
+            width: 100% !important;
+        }
+        
+        .post-actions-bar .flex {
+            flex-direction: column;
+            gap: var(--padding-sm);
+        }
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Получение местоположения
-function getLocation() {
-    const status = document.getElementById('location-status');
-    
-    if (navigator.geolocation) {
-        status.textContent = 'Получение местоположения...';
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                document.getElementById('latitude').value = position.coords.latitude;
-                document.getElementById('longitude').value = position.coords.longitude;
-                status.textContent = '✓ Местоположение добавлено';
-                status.style.color = '#00e1d3';
-            },
-            function(error) {
-                status.textContent = 'Ошибка получения местоположения';
-                status.style.color = '#ff6b6b';
+    // Превью изображения
+    function previewImage(input) {
+        const preview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.classList.remove('hidden');
             }
-        );
-    } else {
-        status.textContent = 'Геолокация не поддерживается';
-        status.style.color = '#ff6b6b';
-    }
-}
-
-// Переключение меню поста
-function togglePostMenu(postId) {
-    const menu = document.getElementById(`post-menu-${postId}`);
-    menu.classList.toggle('show');
-}
-
-// Закрытие меню при клике вне его
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('.post-actions-menu')) {
-        document.querySelectorAll('.post-menu').forEach(menu => {
-            menu.classList.remove('show');
-        });
-    }
-});
-
-// Лайки
-document.addEventListener('DOMContentLoaded', function() {
-    const likeButtons = document.querySelectorAll('.like-btn');
-    
-    likeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const postId = this.dataset.postId;
-            const likeCount = this.querySelector('.like-count');
-            
-            fetch(`/api/like/${postId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    likeCount.textContent = data.likes_count;
-                    this.classList.toggle('liked', data.liked);
-                }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-            });
-        });
-    });
-});
-
-// Комментарии
-function toggleComments(postId) {
-    const commentsSection = document.getElementById(`comments-${postId}`);
-    const commentsList = document.getElementById(`comments-list-${postId}`);
-    
-    if (commentsSection.style.display === 'none') {
-        commentsSection.style.display = 'block';
-        loadComments(postId);
-    } else {
-        commentsSection.style.display = 'none';
-    }
-}
-
-function loadComments(postId) {
-    fetch(`/api/comments/${postId}`)
-        .then(response => response.json())
-        .then(data => {
-            const commentsList = document.getElementById(`comments-list-${postId}`);
-            commentsList.innerHTML = '';
-            
-            data.comments.forEach(comment => {
-                const commentElement = createCommentElement(comment);
-                commentsList.appendChild(commentElement);
-            });
-        })
-        .catch(error => {
-            console.error('Ошибка загрузки комментариев:', error);
-        });
-}
-
-function addComment(event, postId) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const textarea = form.querySelector('.comment-input');
-    const content = textarea.value.trim();
-    
-    if (!content) return;
-    
-    fetch(`/api/comment/${postId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: content })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            textarea.value = '';
-            loadComments(postId);
-            
-            // Обновляем счетчик комментариев
-            const commentBtn = document.querySelector(`[onclick="toggleComments(${postId})"]`);
-            if (commentBtn) {
-                commentBtn.innerHTML = `${data.comments_count} 💬`;
-            }
+            reader.readAsDataURL(input.files[0]);
         }
-    })
-    .catch(error => {
-        console.error('Ошибка добавления комментария:', error);
-    });
-}
-
-function createCommentElement(comment) {
-    const div = document.createElement('div');
-    div.className = 'comment-item';
-    div.style.cssText = `
-        background: #2c2c2c;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 0.5rem;
-    `;
-    
-    div.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <strong style="color: #00e1d3;">${comment.user.username}</strong>
-            <span style="color: #888; font-size: 0.8rem;">${comment.created_at}</span>
-        </div>
-        <div style="color: #d0d0d0;">${comment.content}</div>
-    `;
-    
-    return div;
-}
-
-// Модальное окно для изображений
-function openImageModal(src) {
-    const modal = document.getElementById('imageModal');
-    const modalImage = document.getElementById('modalImage');
-    
-    modalImage.src = src;
-    modal.classList.add('show');
-}
-
-function closeImageModal() {
-    const modal = document.getElementById('imageModal');
-    modal.classList.remove('show');
-}
-
-// Редактирование и удаление постов
-function editPost(postId) {
-    // Реализация редактирования поста
-    console.log('Редактирование поста:', postId);
-}
-
-function deletePost(postId) {
-    if (confirm('Вы уверены, что хотите удалить этот пост?')) {
-        fetch(`/wall/delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ post_id: postId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Ошибка при удалении поста');
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            alert('Ошибка при удалении поста');
-        });
     }
-}
+    
+    // Удаление изображения
+    function removeImage() {
+        document.getElementById('image').value = '';
+        document.getElementById('image-preview').classList.add('hidden');
+    }
+    
+    // Очистка формы
+    function clearForm() {
+        document.getElementById('content').value = '';
+        document.getElementById('tags').value = '';
+        removeImage();
+        updateCharCount();
+    }
+    
+    // Подсчет символов
+    function updateCharCount() {
+        const content = document.getElementById('content').value;
+        document.getElementById('char-count').textContent = content.length;
+    }
+    
+    // Переключение комментариев
+    function toggleComments(postId) {
+        const comments = document.getElementById(`comments-${postId}`);
+        comments.style.display = comments.style.display === 'none' ? 'block' : 'none';
+    }
+    
+    // Поделиться постом
+    function sharePost(postId) {
+        const url = `${window.location.origin}/post/${postId}`;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Публикация в WorkNest',
+                url: url
+            });
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('Ссылка скопирована в буфер обмена', 'success');
+            });
+        }
+    }
+    
+    // Модальное окно для изображений
+    function openImageModal(src) {
+        document.getElementById('modal-image').src = src;
+        document.getElementById('image-modal').style.display = 'flex';
+    }
+    
+    function closeImageModal() {
+        document.getElementById('image-modal').style.display = 'none';
+    }
+    
+    // Редактирование поста
+    function editPost(postId) {
+        showToast('Функция редактирования в разработке', 'info');
+    }
+    
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        const contentTextarea = document.getElementById('content');
+        if (contentTextarea) {
+            contentTextarea.addEventListener('input', updateCharCount);
+            updateCharCount();
+        }
+        
+        // Автоматическое изменение размера textarea
+        contentTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+        
+        // Закрытие модального окна по клику вне изображения
+        document.getElementById('image-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    });
 </script>
+{% endblock %}
 {% endblock %} 

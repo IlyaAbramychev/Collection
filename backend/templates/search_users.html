@@ -1,324 +1,623 @@
 {% extends 'base.html' %}
+
+{% block title %}Поиск пользователей - WorkNest{% endblock %}
+
 {% block content %}
-<div class="search-page" style="max-width:800px;margin:0 auto;padding:20px;">
-    <div class="search-header" style="background:rgba(255,255,255,0.9);border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(44,62,80,0.10);">
-        <h1 style="color:#187a6e;font-size:1.8em;margin-bottom:16px;text-align:center;">Поиск пользователей</h1>
-        <p style="text-align:center;color:#666;margin-bottom:20px;">Найдите коллег и единомышленников по имени, ФИО или организации</p>
-        <div class="search-form" style="display:flex;gap:12px;align-items:center;">
-            <input type="text" id="searchInput" placeholder="Введите имя пользователя, ФИО или организацию..." 
-                   style="flex:1;padding:12px 16px;border:2px solid #4db6e2;border-radius:12px;font-size:1.1em;outline:none;transition:border-color 0.2s;">
-            <button onclick="searchUsers()" style="padding:12px 24px;background:linear-gradient(90deg,#3ec6b0 0%,#4db6e2 100%);color:#fff;border:none;border-radius:12px;font-weight:600;cursor:pointer;transition:transform 0.2s;">Найти</button>
+<div class="search-page fade-in">
+    <div class="search-container">
+        <!-- Заголовок -->
+        <div class="search-header">
+            <h1>🔍 Поиск пользователей</h1>
+            <p class="text-muted">Найдите коллег и единомышленников по имени, ФИО или организации</p>
         </div>
-    </div>
-    
-    <div id="searchResults" class="search-results" style="display:none;">
-        <h2 style="color:#187a6e;margin-bottom:16px;">Результаты поиска</h2>
-        <div id="usersList" class="users-list" style="display:flex;flex-direction:column;gap:16px;">
-            <!-- Результаты будут добавлены через JavaScript -->
+        
+        <!-- Форма поиска -->
+        <div class="search-form-container">
+            <div class="search-form">
+                <div class="search-input-wrapper">
+                    <input type="text" 
+                           id="searchInput" 
+                           placeholder="Введите имя пользователя, ФИО или организацию..." 
+                           class="search-input">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <button onclick="searchUsers()" class="btn btn-primary search-btn">
+                    <span>🔍</span> Найти
+                </button>
+            </div>
         </div>
-    </div>
-    
-    <div id="noResults" class="no-results" style="display:none;text-align:center;padding:40px;color:#666;">
-        <p style="font-size:1.2em;">Пользователи не найдены</p>
-        <p>Попробуйте изменить поисковый запрос</p>
-    </div>
-    
-    <div id="searchHint" class="search-hint" style="text-align:center;padding:40px;color:#666;">
-        <p style="font-size:1.2em;">Введите поисковый запрос для начала поиска</p>
-        <p>Поиск работает по имени пользователя, ФИО и организации</p>
-        <p style="margin-top:10px;font-size:0.9em;color:#999;">💡 Для поиска по тегам используйте #тег в строке поиска вверху страницы</p>
+        
+        <!-- Результаты поиска -->
+        <div id="searchResults" class="search-results hidden">
+            <div class="results-header">
+                <h2>Результаты поиска</h2>
+                <span id="resultsCount" class="results-count"></span>
+            </div>
+            <div id="usersList" class="users-list">
+                <!-- Результаты будут добавлены через JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Нет результатов -->
+        <div id="noResults" class="empty-state hidden">
+            <div class="empty-state-icon">😕</div>
+            <h3 class="empty-state-title">Пользователи не найдены</h3>
+            <p class="empty-state-description">Попробуйте изменить поисковый запрос или используйте другие ключевые слова</p>
+        </div>
+        
+        <!-- Подсказка -->
+        <div id="searchHint" class="search-hint">
+            <div class="hint-icon">🔍</div>
+            <h3>Начните поиск</h3>
+            <p>Введите поисковый запрос для поиска пользователей</p>
+            <div class="search-tips">
+                <div class="tip-item">
+                    <span class="tip-icon">👤</span>
+                    <span>Поиск по имени пользователя</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">📝</span>
+                    <span>Поиск по ФИО</span>
+                </div>
+                <div class="tip-item">
+                    <span class="tip-icon">🏢</span>
+                    <span>Поиск по организации</span>
+                </div>
+            </div>
+            <p class="tip-note">💡 Для поиска по тегам используйте #тег в строке поиска вверху страницы</p>
+        </div>
+        
+        <!-- Загрузка -->
+        <div id="loadingIndicator" class="loading-indicator hidden">
+            <div class="loading"></div>
+            <p>Поиск пользователей...</p>
+        </div>
     </div>
 </div>
 
+{% block extra_css %}
 <style>
-.user-card {
-    background: rgba(255,255,255,0.9);
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 24px rgba(44,62,80,0.10);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-    position: relative;
-}
-
-.user-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(44,62,80,0.15);
-    background: #fafdff;
-}
-
-.user-card .follow-btn {
-    pointer-events: auto;
-    z-index: 2;
-}
-
-.user-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #fafdff;
-    overflow: hidden;
-    flex-shrink: 0;
-}
-
-.user-info {
-    flex: 1;
-}
-
-.user-username {
-    font-weight: 700;
-    color: #187a6e;
-    font-size: 1.2em;
-    margin-bottom: 4px;
-}
-
-.user-details {
-    color: #666;
-    font-size: 0.95em;
-    margin-bottom: 4px;
-}
-
-.user-degree {
-    display: inline-block;
-    background: #4db6e2;
-    color: #fff;
-    border-radius: 8px;
-    padding: 2px 8px;
-    font-size: 0.85em;
-    font-weight: 600;
-}
-
-.follow-btn {
-    padding: 8px 20px;
-    border: 2px solid #4db6e2;
-    border-radius: 8px;
-    background: #fff;
-    color: #4db6e2;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.follow-btn:hover {
-    background: #4db6e2;
-    color: #fff;
-}
-
-.follow-btn.following {
-    background: #e53935;
-    border-color: #e53935;
-    color: #fff;
-}
-
-.follow-btn.following:hover {
-    background: #b71c1c;
-    border-color: #b71c1c;
-}
-
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-}
-
-.loading::after {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid #4db6e2;
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 1s linear infinite;
-    margin-left: 10px;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-</style>
-
-<script>
-let searchTimeout;
-
-document.getElementById('searchInput').addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    const query = this.value.trim();
-    
-    if (query.length >= 2) {
-        searchTimeout = setTimeout(() => {
-            searchUsers();
-        }, 500); // Задержка 500мс для избежания частых запросов
-    } else {
-        showHint();
-    }
-});
-
-// Автоматический поиск при загрузке страницы, если есть параметр q
-document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const queryParam = urlParams.get('q');
-    if (queryParam && queryParam.trim().length >= 2) {
-        document.getElementById('searchInput').value = queryParam;
-        searchUsers();
-    }
-});
-
-document.getElementById('searchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        searchUsers();
-    }
-});
-
-async function searchUsers() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (query.length < 2) {
-        showHint();
-        return;
+    .search-page {
+        min-height: 80vh;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem 0;
     }
     
-    showLoading();
+    .search-container {
+        max-width: 800px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
     
-    try {
-        const response = await fetch(`/search/users?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
-        
-        if (response.ok) {
-            displayResults(data.users);
-        } else {
-            showError(data.error || 'Ошибка поиска');
+    .search-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .search-header h1 {
+        font-size: 2.5rem;
+        color: #f0f0f0;
+        margin-bottom: 1rem;
+    }
+    
+    .search-form-container {
+        margin-bottom: 3rem;
+    }
+    
+    .search-form {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .search-input-wrapper {
+        position: relative;
+        flex: 1;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        background-color: #1e1e1e;
+        border: 2px solid #2c2c2c;
+        border-radius: 12px;
+        color: #f0f0f0;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: #00e1d3;
+        box-shadow: 0 0 0 3px rgba(0, 225, 211, 0.2);
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.2rem;
+        color: #999;
+        pointer-events: none;
+    }
+    
+    .search-btn {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        white-space: nowrap;
+    }
+    
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #2c2c2c;
+    }
+    
+    .results-header h2 {
+        color: #f0f0f0;
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .results-count {
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .users-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .user-card {
+        background-color: #1e1e1e;
+        border: 1px solid #2c2c2c;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .user-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #00e1d3, #00b8cc);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .user-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 225, 211, 0.15);
+        border-color: #00e1d3;
+    }
+    
+    .user-card:hover::before {
+        opacity: 1;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #2c2c2c;
+        transition: border-color 0.3s ease;
+    }
+    
+    .user-card:hover .user-avatar {
+        border-color: #00e1d3;
+    }
+    
+    .user-avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #00e1d3, #00b8cc);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+        border: 2px solid #2c2c2c;
+        transition: all 0.3s ease;
+    }
+    
+    .user-card:hover .user-avatar-placeholder {
+        border-color: #00e1d3;
+        transform: scale(1.1);
+    }
+    
+    .user-info {
+        flex: 1;
+    }
+    
+    .user-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f0f0f0;
+        margin-bottom: 0.25rem;
+    }
+    
+    .user-username {
+        color: #00e1d3;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        color: #999;
+        font-size: 0.85rem;
+    }
+    
+    .user-detail {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .user-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .search-hint {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #999;
+    }
+    
+    .hint-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .search-hint h3 {
+        color: #f0f0f0;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+    }
+    
+    .search-tips {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #ccc;
+    }
+    
+    .tip-icon {
+        font-size: 1.2rem;
+    }
+    
+    .tip-note {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 1rem;
+    }
+    
+    .loading-indicator {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #999;
+    }
+    
+    .loading-indicator .loading {
+        margin: 0 auto 1rem;
+    }
+    
+    .hidden {
+        display: none;
+    }
+    
+    /* Мобильная адаптация */
+    @media (max-width: 768px) {
+        .search-page {
+            padding: 1rem 0;
         }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        showError('Ошибка соединения');
+        
+        .search-header h1 {
+            font-size: 2rem;
+        }
+        
+        .search-form {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .search-input-wrapper {
+            width: 100%;
+        }
+        
+        .search-btn {
+            width: 100%;
+        }
+        
+        .user-card {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+        
+        .user-info {
+            text-align: center;
+        }
+        
+        .user-details {
+            justify-content: center;
+        }
+        
+        .search-tips {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .results-header {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
     }
-}
+</style>
+{% endblock %}
 
-function displayResults(users) {
-    const resultsDiv = document.getElementById('searchResults');
-    const usersList = document.getElementById('usersList');
-    const noResults = document.getElementById('noResults');
-    const hint = document.getElementById('searchHint');
+{% block extra_js %}
+<script>
+    let searchTimeout;
     
-    // Скрываем все
-    resultsDiv.style.display = 'none';
-    noResults.style.display = 'none';
-    hint.style.display = 'none';
-    
-    if (users.length === 0) {
-        noResults.style.display = 'block';
-        return;
-    }
-    
-    // Очищаем список
-    usersList.innerHTML = '';
-    
-    // Добавляем пользователей
-    users.forEach(user => {
-        const userCard = document.createElement('a');
-        userCard.className = 'user-card';
-        userCard.href = `/user/${user.username}`;
-        userCard.style.textDecoration = 'none';
-        userCard.style.color = 'inherit';
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
         
-        const avatar = user.avatar || 'img/profile_user_svg.svg';
-        const fullName = user.full_name || '';
-        const degree = user.degree || '';
-        const organization = user.organization || '';
-        const location = user.location || '';
+        // Поиск по Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
         
-        userCard.innerHTML = `
-            <div class="user-avatar">
-                <img src="/static/${avatar}" alt="Аватар" style="width:100%;height:100%;object-fit:cover;">
-            </div>
-            <div class="user-info">
-                <div class="user-username">${user.username}</div>
-                ${fullName ? `<div class="user-details">${fullName}</div>` : ''}
-                ${organization ? `<div class="user-details">${organization}</div>` : ''}
-                ${location ? `<div class="user-details">${location}</div>` : ''}
-                ${degree ? `<span class="user-degree">${degree}</span>` : ''}
-            </div>
-            <button class="follow-btn ${user.is_following ? 'following' : ''}" 
-                    onclick="event.preventDefault();toggleFollow('${user.username}', this)">
-                ${user.is_following ? 'Отписаться' : 'Подписаться'}
-            </button>
-        `;
+        // Поиск в реальном времени (с задержкой)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length > 2) {
+                searchTimeout = setTimeout(() => {
+                    searchUsers();
+                }, 500);
+            } else if (query.length === 0) {
+                showHint();
+            }
+        });
         
-        usersList.appendChild(userCard);
+        // Фокус на поле поиска
+        searchInput.focus();
     });
     
-    resultsDiv.style.display = 'block';
-}
-
-async function toggleFollow(username, button) {
-    const isFollowing = button.classList.contains('following');
-    const endpoint = isFollowing ? `/unfollow/${username}` : `/follow/${username}`;
+    // Функция поиска пользователей
+    function searchUsers() {
+        const query = document.getElementById('searchInput').value.trim();
+        
+        if (!query) {
+            showHint();
+            return;
+        }
+        
+        showLoading();
+        
+        // Имитация AJAX запроса
+        fetch(`/api/search_users?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                displayResults(data.users || [], query);
+            })
+            .catch(error => {
+                console.error('Ошибка поиска:', error);
+                showError('Произошла ошибка при поиске. Попробуйте еще раз.');
+            });
+    }
     
-    try {
-        const response = await fetch(endpoint, {
+    // Отображение результатов
+    function displayResults(users, query) {
+        hideAll();
+        
+        if (users.length === 0) {
+            showNoResults();
+            return;
+        }
+        
+        const resultsContainer = document.getElementById('searchResults');
+        const usersList = document.getElementById('usersList');
+        const resultsCount = document.getElementById('resultsCount');
+        
+        // Обновляем счетчик
+        resultsCount.textContent = `Найдено: ${users.length} пользователей`;
+        
+        // Очищаем предыдущие результаты
+        usersList.innerHTML = '';
+        
+        // Добавляем пользователей
+        users.forEach(user => {
+            const userCard = createUserCard(user);
+            usersList.appendChild(userCard);
+        });
+        
+        resultsContainer.classList.remove('hidden');
+        
+        // Анимация появления карточек
+        setTimeout(() => {
+            document.querySelectorAll('.user-card').forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.3s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 50);
+                }, index * 100);
+            });
+        }, 100);
+    }
+    
+    // Создание карточки пользователя
+    function createUserCard(user) {
+        const card = document.createElement('a');
+        card.className = 'user-card';
+        card.href = `/user/${user.username}`;
+        
+        // Аватар
+        const avatarHtml = user.avatar 
+            ? `<img src="/static/avatars/${user.avatar}" alt="${user.username}" class="user-avatar">`
+            : `<div class="user-avatar-placeholder">${user.username[0].toUpperCase()}</div>`;
+        
+        // Детали пользователя
+        const details = [];
+        if (user.organization) {
+            details.push(`<div class="user-detail"><span>🏢</span><span>${user.organization}</span></div>`);
+        }
+        if (user.position) {
+            details.push(`<div class="user-detail"><span>💼</span><span>${user.position}</span></div>`);
+        }
+        if (user.location) {
+            details.push(`<div class="user-detail"><span>📍</span><span>${user.location}</span></div>`);
+        }
+        
+        // Кнопки действий
+        const actionsHtml = `
+            <div class="user-actions">
+                <button class="btn btn-sm btn-primary" onclick="followUser('${user.username}'); event.preventDefault();">
+                    ${user.is_following ? '✓ Подписан' : '+ Подписаться'}
+                </button>
+                <button class="btn btn-sm btn-outline" onclick="sendMessage('${user.username}'); event.preventDefault();">
+                    💬 Сообщение
+                </button>
+            </div>
+        `;
+        
+        card.innerHTML = `
+            ${avatarHtml}
+            <div class="user-info">
+                <div class="user-name">${user.full_name || user.username}</div>
+                <div class="user-username">@${user.username}</div>
+                ${details.length > 0 ? `<div class="user-details">${details.join('')}</div>` : ''}
+            </div>
+            ${actionsHtml}
+        `;
+        
+        return card;
+    }
+    
+    // Подписка на пользователя
+    function followUser(username) {
+        fetch(`/api/follow/${username}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            if (isFollowing) {
-                button.classList.remove('following');
-                button.textContent = 'Подписаться';
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message, 'success');
+                // Обновляем кнопку
+                const button = event.target;
+                button.textContent = data.is_following ? '✓ Подписан' : '+ Подписаться';
+                button.className = data.is_following ? 'btn btn-sm btn-secondary' : 'btn btn-sm btn-primary';
             } else {
-                button.classList.add('following');
-                button.textContent = 'Отписаться';
+                showToast(data.message || 'Ошибка', 'error');
             }
-        } else {
-            alert(data.error || 'Ошибка операции');
-        }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        alert('Ошибка соединения');
+        })
+        .catch(error => {
+            console.error('Ошибка подписки:', error);
+            showToast('Произошла ошибка', 'error');
+        });
     }
-}
-
-function showLoading() {
-    const resultsDiv = document.getElementById('searchResults');
-    const usersList = document.getElementById('usersList');
-    const noResults = document.getElementById('noResults');
-    const hint = document.getElementById('searchHint');
     
-    // Скрываем все
-    resultsDiv.style.display = 'none';
-    noResults.style.display = 'none';
-    hint.style.display = 'none';
+    // Отправка сообщения
+    function sendMessage(username) {
+        showToast('Функция отправки сообщений в разработке', 'info');
+    }
     
-    // Показываем загрузку
-    usersList.innerHTML = '<div class="loading">Поиск пользователей...</div>';
-    resultsDiv.style.display = 'block';
-}
-
-function showError(message) {
-    const resultsDiv = document.getElementById('searchResults');
-    const usersList = document.getElementById('usersList');
+    // Показать подсказку
+    function showHint() {
+        hideAll();
+        document.getElementById('searchHint').classList.remove('hidden');
+    }
     
-    usersList.innerHTML = `<div style="text-align:center;padding:40px;color:#e53935;">${message}</div>`;
-    resultsDiv.style.display = 'block';
-}
-
-function showHint() {
-    const resultsDiv = document.getElementById('searchResults');
-    const noResults = document.getElementById('noResults');
-    const hint = document.getElementById('searchHint');
+    // Показать загрузку
+    function showLoading() {
+        hideAll();
+        document.getElementById('loadingIndicator').classList.remove('hidden');
+    }
     
-    resultsDiv.style.display = 'none';
-    noResults.style.display = 'none';
-    hint.style.display = 'block';
-}
+    // Показать "нет результатов"
+    function showNoResults() {
+        hideAll();
+        document.getElementById('noResults').classList.remove('hidden');
+    }
+    
+    // Показать ошибку
+    function showError(message) {
+        hideAll();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'empty-state';
+        errorDiv.innerHTML = `
+            <div class="empty-state-icon">⚠️</div>
+            <h3 class="empty-state-title">Ошибка</h3>
+            <p class="empty-state-description">${message}</p>
+        `;
+        document.querySelector('.search-container').appendChild(errorDiv);
+    }
+    
+    // Скрыть все состояния
+    function hideAll() {
+        document.getElementById('searchResults').classList.add('hidden');
+        document.getElementById('noResults').classList.add('hidden');
+        document.getElementById('searchHint').classList.add('hidden');
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        
+        // Удаляем временные элементы ошибок
+        document.querySelectorAll('.empty-state:not(#noResults)').forEach(el => {
+            if (el.id !== 'noResults') el.remove();
+        });
+    }
 </script>
+{% endblock %}
 {% endblock %} 
