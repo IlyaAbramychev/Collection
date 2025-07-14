@@ -1,55 +1,55 @@
 // Typewriter effect for search input placeholder
 const phrases = [
-  "квантовые вычисления",
-  "ядерные реакторы",
-  "нейронные сети",
-  "машинное обучение",
-  "графовые базы данных",
-  "искусственный интеллект",
-  "обработка естественного языка",
-  "глубокое обучение",
-  "квантовая криптография",
-  "блокчейн технологии",
-  "генетические алгоритмы",
-  "робототехника",
-  "интернет вещей",
-  "распределённые вычисления",
-  "облачные платформы",
-  "биоинформатика",
-  "компьютерное зрение",
-  "теория информации",
-  "алгоритмы оптимизации",
-  "сверхпроводники",
-  "нанотехнологии",
-  "квантовая телепортация",
-  "системы управления",
-  "цифровая обработка сигналов",
-  "виртуальная реальность",
-  "дополненная реальность",
-  "3D-печать",
-  "автоматизация производства",
-  "большие данные",
-  "анализ данных",
-  "статистическое моделирование",
-  "теория графов",
-  "криптографические протоколы",
-  "квантовые алгоритмы",
-  "обучение с подкреплением",
-  "распознавание образов",
-  "компьютерная лингвистика",
-  "цифровая медицина",
-  "интеллектуальные агенты",
-  "системы поддержки принятия решений",
-  "информационная безопасность",
-  "автоматическое доказательство теорем",
-  "гибридные вычисления",
-  "цифровые двойники",
-  "технологии блокчейн",
-  "интеллектуальные датчики",
-  "квантовые сети",
-  "роботизированные системы",
-  "машинное зрение",
-  "глубокие нейронные сети"
+  "🔬 квантовые вычисления",
+  "⚛️ ядерные реакторы", 
+  "🧠 нейронные сети",
+  "🤖 машинное обучение",
+  "📊 графовые базы данных",
+  "🎯 искусственный интеллект",
+  "💬 обработка естественного языка",
+  "🔥 глубокое обучение",
+  "🔐 квантовая криптография",
+  "⛓️ блокчейн технологии",
+  "🧬 генетические алгоритмы",
+  "🤖 робототехника",
+  "🌐 интернет вещей",
+  "☁️ распределённые вычисления",
+  "💾 облачные платформы",
+  "🧪 биоинформатика",
+  "👁️ компьютерное зрение",
+  "📡 теория информации",
+  "⚡ алгоритмы оптимизации",
+  "🔋 сверхпроводники",
+  "🔬 нанотехнологии",
+  "✨ квантовая телепортация",
+  "⚙️ системы управления",
+  "📈 цифровая обработка сигналов",
+  "🥽 виртуальная реальность",
+  "🌟 дополненная реальность",
+  "🖨️ 3D-печать",
+  "🏭 автоматизация производства",
+  "📊 большие данные",
+  "📈 анализ данных",
+  "📊 статистическое моделирование",
+  "🕸️ теория графов",
+  "🔒 криптографические протоколы",
+  "⚡ квантовые алгоритмы",
+  "🎮 обучение с подкреплением",
+  "🔍 распознавание образов",
+  "📝 компьютерная лингвистика",
+  "💊 цифровая медицина",
+  "🤖 интеллектуальные агенты",
+  "🎯 системы поддержки принятия решений",
+  "🛡️ информационная безопасность",
+  "📋 автоматическое доказательство теорем",
+  "⚡ гибридные вычисления",
+  "👥 цифровые двойники",
+  "🔗 технологии блокчейн",
+  "📡 интеллектуальные датчики",
+  "🌐 квантовые сети",
+  "🤖 роботизированные системы",
+  "👁️ машинное зрение",
+  "🧠 глубокие нейронные сети"
 ];
 
 function shuffle(array) {
@@ -87,38 +87,86 @@ if (searchInput) {
   }
 
   function typePhrase() {
+    if (!typewriterActive) return;
+    
     const phrase = currentPhrases[phraseIndex];
     if (typing) {
       if (charIndex <= phrase.length) {
-        searchInput.setAttribute('placeholder', phrase.slice(0, charIndex) + '|');
-        updateInputWidth(phrase.slice(0, charIndex));
+        const currentText = phrase.slice(0, charIndex);
+        const cursor = charIndex < phrase.length ? '|' : '';
+        searchInput.setAttribute('placeholder', currentText + cursor);
+        updateInputWidth(currentText);
         charIndex++;
-        setTimeout(typePhrase, 70 + Math.random() * 40);
+        // Более плавная скорость печати
+        typewriterTimeout = setTimeout(typePhrase, 80 + Math.random() * 50);
       } else {
         typing = false;
-        setTimeout(typePhrase, 1200 + Math.random() * 600);
+        // Пауза после завершения печати
+        typewriterTimeout = setTimeout(typePhrase, 2000 + Math.random() * 1000);
       }
     } else {
       if (charIndex > 0) {
-        searchInput.setAttribute('placeholder', phrase.slice(0, charIndex - 1) + '|');
-        updateInputWidth(phrase.slice(0, charIndex - 1));
+        const currentText = phrase.slice(0, charIndex - 1);
+        const cursor = charIndex > 1 ? '|' : '';
+        searchInput.setAttribute('placeholder', currentText + cursor);
+        updateInputWidth(currentText);
         charIndex--;
-        setTimeout(typePhrase, 30 + Math.random() * 30);
+        // Более быстрое удаление
+        typewriterTimeout = setTimeout(typePhrase, 40 + Math.random() * 20);
       } else {
         typing = true;
         phraseIndex = (phraseIndex + 1) % currentPhrases.length;
         if (phraseIndex === 0) shuffle(currentPhrases);
-        setTimeout(typePhrase, 400 + Math.random() * 200);
+        // Пауза перед началом нового слова
+        typewriterTimeout = setTimeout(typePhrase, 600 + Math.random() * 400);
       }
     }
   }
 
-  typePhrase();
-  // Сброс ширины при фокусе пользователя
+  let typewriterActive = true;
+  let typewriterTimeout;
+  
+  function startTypewriter() {
+    if (typewriterActive) {
+      typewriterTimeout = setTimeout(typePhrase, 100);
+    }
+  }
+  
+  function stopTypewriter() {
+    typewriterActive = false;
+    if (typewriterTimeout) {
+      clearTimeout(typewriterTimeout);
+    }
+    searchInput.setAttribute('placeholder', 'Поиск пользователей или #тегов...');
+    searchInput.classList.remove('typewriter-active');
+  }
+  
+  function resumeTypewriter() {
+    if (searchInput.value === '') {
+      typewriterActive = true;
+      searchInput.classList.add('typewriter-active');
+      startTypewriter();
+    }
+  }
+  
+  startTypewriter();
+  
+  // Остановка typewriter при взаимодействии пользователя
   searchInput.addEventListener('focus', () => {
     searchInput.style.width = maxWidth + 'px';
+    stopTypewriter();
   });
+  
   searchInput.addEventListener('blur', () => {
     updateInputWidth('');
+    setTimeout(resumeTypewriter, 1000); // Возобновляем через секунду после потери фокуса
+  });
+  
+  searchInput.addEventListener('input', () => {
+    if (searchInput.value.length > 0) {
+      stopTypewriter();
+    } else {
+      resumeTypewriter();
+    }
   });
 } 

@@ -1,0 +1,324 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="search-page" style="max-width:800px;margin:0 auto;padding:20px;">
+    <div class="search-header" style="background:rgba(255,255,255,0.9);border-radius:18px;padding:24px;margin-bottom:24px;box-shadow:0 4px 24px rgba(44,62,80,0.10);">
+        <h1 style="color:#187a6e;font-size:1.8em;margin-bottom:16px;text-align:center;">Поиск пользователей</h1>
+        <p style="text-align:center;color:#666;margin-bottom:20px;">Найдите коллег и единомышленников по имени, ФИО или организации</p>
+        <div class="search-form" style="display:flex;gap:12px;align-items:center;">
+            <input type="text" id="searchInput" placeholder="Введите имя пользователя, ФИО или организацию..." 
+                   style="flex:1;padding:12px 16px;border:2px solid #4db6e2;border-radius:12px;font-size:1.1em;outline:none;transition:border-color 0.2s;">
+            <button onclick="searchUsers()" style="padding:12px 24px;background:linear-gradient(90deg,#3ec6b0 0%,#4db6e2 100%);color:#fff;border:none;border-radius:12px;font-weight:600;cursor:pointer;transition:transform 0.2s;">Найти</button>
+        </div>
+    </div>
+    
+    <div id="searchResults" class="search-results" style="display:none;">
+        <h2 style="color:#187a6e;margin-bottom:16px;">Результаты поиска</h2>
+        <div id="usersList" class="users-list" style="display:flex;flex-direction:column;gap:16px;">
+            <!-- Результаты будут добавлены через JavaScript -->
+        </div>
+    </div>
+    
+    <div id="noResults" class="no-results" style="display:none;text-align:center;padding:40px;color:#666;">
+        <p style="font-size:1.2em;">Пользователи не найдены</p>
+        <p>Попробуйте изменить поисковый запрос</p>
+    </div>
+    
+    <div id="searchHint" class="search-hint" style="text-align:center;padding:40px;color:#666;">
+        <p style="font-size:1.2em;">Введите поисковый запрос для начала поиска</p>
+        <p>Поиск работает по имени пользователя, ФИО и организации</p>
+        <p style="margin-top:10px;font-size:0.9em;color:#999;">💡 Для поиска по тегам используйте #тег в строке поиска вверху страницы</p>
+    </div>
+</div>
+
+<style>
+.user-card {
+    background: rgba(255,255,255,0.9);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+}
+
+.user-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(44,62,80,0.15);
+    background: #fafdff;
+}
+
+.user-card .follow-btn {
+    pointer-events: auto;
+    z-index: 2;
+}
+
+.user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #fafdff;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-username {
+    font-weight: 700;
+    color: #187a6e;
+    font-size: 1.2em;
+    margin-bottom: 4px;
+}
+
+.user-details {
+    color: #666;
+    font-size: 0.95em;
+    margin-bottom: 4px;
+}
+
+.user-degree {
+    display: inline-block;
+    background: #4db6e2;
+    color: #fff;
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.follow-btn {
+    padding: 8px 20px;
+    border: 2px solid #4db6e2;
+    border-radius: 8px;
+    background: #fff;
+    color: #4db6e2;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.follow-btn:hover {
+    background: #4db6e2;
+    color: #fff;
+}
+
+.follow-btn.following {
+    background: #e53935;
+    border-color: #e53935;
+    color: #fff;
+}
+
+.follow-btn.following:hover {
+    background: #b71c1c;
+    border-color: #b71c1c;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #4db6e2;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+
+<script>
+let searchTimeout;
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length >= 2) {
+        searchTimeout = setTimeout(() => {
+            searchUsers();
+        }, 500); // Задержка 500мс для избежания частых запросов
+    } else {
+        showHint();
+    }
+});
+
+// Автоматический поиск при загрузке страницы, если есть параметр q
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryParam = urlParams.get('q');
+    if (queryParam && queryParam.trim().length >= 2) {
+        document.getElementById('searchInput').value = queryParam;
+        searchUsers();
+    }
+});
+
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchUsers();
+    }
+});
+
+async function searchUsers() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (query.length < 2) {
+        showHint();
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        const response = await fetch(`/search/users?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (response.ok) {
+            displayResults(data.users);
+        } else {
+            showError(data.error || 'Ошибка поиска');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showError('Ошибка соединения');
+    }
+}
+
+function displayResults(users) {
+    const resultsDiv = document.getElementById('searchResults');
+    const usersList = document.getElementById('usersList');
+    const noResults = document.getElementById('noResults');
+    const hint = document.getElementById('searchHint');
+    
+    // Скрываем все
+    resultsDiv.style.display = 'none';
+    noResults.style.display = 'none';
+    hint.style.display = 'none';
+    
+    if (users.length === 0) {
+        noResults.style.display = 'block';
+        return;
+    }
+    
+    // Очищаем список
+    usersList.innerHTML = '';
+    
+    // Добавляем пользователей
+    users.forEach(user => {
+        const userCard = document.createElement('a');
+        userCard.className = 'user-card';
+        userCard.href = `/user/${user.username}`;
+        userCard.style.textDecoration = 'none';
+        userCard.style.color = 'inherit';
+        
+        const avatar = user.avatar || 'img/profile_user_svg.svg';
+        const fullName = user.full_name || '';
+        const degree = user.degree || '';
+        const organization = user.organization || '';
+        const location = user.location || '';
+        
+        userCard.innerHTML = `
+            <div class="user-avatar">
+                <img src="/static/${avatar}" alt="Аватар" style="width:100%;height:100%;object-fit:cover;">
+            </div>
+            <div class="user-info">
+                <div class="user-username">${user.username}</div>
+                ${fullName ? `<div class="user-details">${fullName}</div>` : ''}
+                ${organization ? `<div class="user-details">${organization}</div>` : ''}
+                ${location ? `<div class="user-details">${location}</div>` : ''}
+                ${degree ? `<span class="user-degree">${degree}</span>` : ''}
+            </div>
+            <button class="follow-btn ${user.is_following ? 'following' : ''}" 
+                    onclick="event.preventDefault();toggleFollow('${user.username}', this)">
+                ${user.is_following ? 'Отписаться' : 'Подписаться'}
+            </button>
+        `;
+        
+        usersList.appendChild(userCard);
+    });
+    
+    resultsDiv.style.display = 'block';
+}
+
+async function toggleFollow(username, button) {
+    const isFollowing = button.classList.contains('following');
+    const endpoint = isFollowing ? `/unfollow/${username}` : `/follow/${username}`;
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (isFollowing) {
+                button.classList.remove('following');
+                button.textContent = 'Подписаться';
+            } else {
+                button.classList.add('following');
+                button.textContent = 'Отписаться';
+            }
+        } else {
+            alert(data.error || 'Ошибка операции');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Ошибка соединения');
+    }
+}
+
+function showLoading() {
+    const resultsDiv = document.getElementById('searchResults');
+    const usersList = document.getElementById('usersList');
+    const noResults = document.getElementById('noResults');
+    const hint = document.getElementById('searchHint');
+    
+    // Скрываем все
+    resultsDiv.style.display = 'none';
+    noResults.style.display = 'none';
+    hint.style.display = 'none';
+    
+    // Показываем загрузку
+    usersList.innerHTML = '<div class="loading">Поиск пользователей...</div>';
+    resultsDiv.style.display = 'block';
+}
+
+function showError(message) {
+    const resultsDiv = document.getElementById('searchResults');
+    const usersList = document.getElementById('usersList');
+    
+    usersList.innerHTML = `<div style="text-align:center;padding:40px;color:#e53935;">${message}</div>`;
+    resultsDiv.style.display = 'block';
+}
+
+function showHint() {
+    const resultsDiv = document.getElementById('searchResults');
+    const noResults = document.getElementById('noResults');
+    const hint = document.getElementById('searchHint');
+    
+    resultsDiv.style.display = 'none';
+    noResults.style.display = 'none';
+    hint.style.display = 'block';
+}
+</script>
+{% endblock %} 

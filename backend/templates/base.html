@@ -24,19 +24,20 @@
     </div>
     <header>
         <div class="header-inner">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <img src="{{ url_for('static', filename='img/logo_new_png.png') }}" alt="Логотип" class="logo">
             <h1>WorkNest</h1>
-            <form class="header-search" action="/search" method="get">
-                <input type="text" name="q" placeholder="Поиск..." aria-label="Поиск">
+            <form class="header-search" action="/search" method="get" id="headerSearchForm">
+                <input type="text" name="q" placeholder="Поиск пользователей или #тегов..." aria-label="Поиск" id="headerSearchInput">
                 <button type="submit" title="Найти">
-                    <img src="{{ url_for('static', filename='img/font-search.svg') }}" alt="Поиск" class="search-icon-img">
+                    <img src="{{ url_for('static', filename='img/browser_svg.svg') }}" alt="Поиск" class="search-icon-img">
                 </button>
             </form>
             <nav class="header-nav">
                 <ul>
                     <li><a href="/">Главная</a></li>
                     <li><a href="/articles">Статьи</a></li>
-                    <li><a href="/wall">Стена</a></li>
+                    <li><a href="/wall">Моя стена</a></li>
+                    <li><a href="/feed">Общая лента</a></li>
                 </ul>
             </nav>
             <div class="header-user">
@@ -68,6 +69,48 @@
         </div>
     </footer>
     <script src="{{ url_for('static', filename='header-burger.js') }}"></script>
+    <script>
+        // Обработка поиска из header
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchForm = document.getElementById('headerSearchForm');
+            const searchInput = document.getElementById('headerSearchInput');
+            
+            if (searchForm && searchInput) {
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const query = searchInput.value.trim();
+                    
+                    if (query.length >= 2) {
+                        // Если запрос начинается с #, это поиск по тегам
+                        if (query.startsWith('#')) {
+                            // Перенаправляем на общую ленту с поиском по тегам
+                            window.location.href = `/feed?q=${encodeURIComponent(query)}`;
+                        } else {
+                            // Иначе это поиск пользователей
+                            window.location.href = `/search?q=${encodeURIComponent(query)}`;
+                        }
+                    } else {
+                        // Если запрос короткий, показываем подсказку
+                        searchInput.placeholder = 'Введите минимум 2 символа...';
+                        setTimeout(() => {
+                            searchInput.placeholder = 'Поиск пользователей или #тегов...';
+                        }, 2000);
+                    }
+                });
+                
+                // Автозаполнение из URL параметров
+                const urlParams = new URLSearchParams(window.location.search);
+                const queryParam = urlParams.get('q');
+                if (queryParam) {
+                    searchInput.value = queryParam;
+                }
+            }
+        });
+    </script>
+    
+    <!-- Typewriter effect for search -->
+    <script src="{{ url_for('static', filename='search-typewriter.js') }}"></script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html> 

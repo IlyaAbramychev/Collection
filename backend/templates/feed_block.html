@@ -1,0 +1,181 @@
+<!-- Блок общей ленты для главной страницы -->
+<div class="feed-block" style="background:rgba(255,255,255,0.95);border-radius:20px;box-shadow:0 8px 32px rgba(62,198,176,0.12);padding:0;height:fit-content;max-height:80vh;overflow:hidden;border:1px solid rgba(62,198,176,0.1);">
+  
+  {% if posts %}
+    <div class="feed-posts" style="display:flex;flex-direction:column;gap:0;max-height:80vh;overflow-y:auto;">
+      {% for post in posts[:5] %}
+      <div class="feed-post" style="padding:20px;{% if not loop.last %}border-bottom:1px solid rgba(62,198,176,0.08);{% endif %}transition:all 0.3s ease;position:relative;" 
+           onmouseover="this.style.background='rgba(62,198,176,0.04)';this.style.transform='translateX(4px)'" 
+           onmouseout="this.style.background='transparent';this.style.transform='translateX(0)'">
+        
+        <!-- Автор поста -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <a href="/user/{{ post.user.username }}" style="display:flex;align-items:center;gap:10px;text-decoration:none;transition:transform 0.2s;" 
+             onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div style="position:relative;">
+              <img src="{{ url_for('static', filename=post.user.avatar) if post.user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" 
+                   alt="Аватар" style="width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid rgba(62,198,176,0.2);object-fit:cover;">
+              <!-- Индикатор онлайн статуса -->
+              {% if is_user_online(post.user) %}
+              <div style="position:absolute;bottom:-2px;right:-2px;width:12px;height:12px;background:#27ae60;border-radius:50%;border:2px solid #fff;"></div>
+              {% endif %}
+            </div>
+            <div style="display:flex;flex-direction:column;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-weight:700;color:#187a6e;font-size:0.95em;">{{ post.user.username }}</span>
+                {% if post.user.degree %}
+                  <span class="degree-badge degree-{{ post.user.degree|lower|replace(' ', '-')|trim }}" 
+                        style="font-size:0.75em;padding:2px 8px;border-radius:12px;font-weight:600;">{{ post.user.degree }}</span>
+                {% endif %}
+              </div>
+              <div style="font-size:0.8em;color:#666;margin-top:1px;">{{ post.created_at.strftime('%d.%m в %H:%M') }}</div>
+            </div>
+          </a>
+        </div>
+        
+        <!-- Содержимое поста -->
+        <div style="margin-bottom:12px;font-size:0.95em;line-height:1.5;color:#333;">
+          {{ (post.content[:120] + '...' if post.content|length > 120 else post.content)|hashtagify|safe }}
+        </div>
+        
+        <!-- Изображение поста -->
+        {% if post.image_path %}
+        <div style="margin-bottom:12px;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+          <img src="{{ url_for('static', filename=post.image_path) }}" alt="Изображение" 
+               style="width:100%;max-height:120px;object-fit:cover;transition:transform 0.3s;cursor:pointer;" 
+               onclick="openImageModal(this.src)"
+               onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+        </div>
+        {% endif %}
+        
+        <!-- Теги -->
+        {% if post.tags %}
+        <div style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;">
+          {% for tag in post.tags[:3] %}
+            <a href="/feed?q=%23{{ tag.name }}" class="hashtag" 
+               style="background:rgba(62,198,176,0.1);color:#187a6e;padding:4px 10px;border-radius:16px;text-decoration:none;font-size:0.8em;font-weight:600;transition:all 0.2s;border:1px solid rgba(62,198,176,0.2);"
+               onmouseover="this.style.background='#3ec6b0';this.style.color='#fff'" 
+               onmouseout="this.style.background='rgba(62,198,176,0.1)';this.style.color='#187a6e'">
+              #{{ tag.name }}
+            </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Действия и статистика -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(62,198,176,0.08);">
+          <div style="display:flex;gap:20px;align-items:center;">
+            <!-- Лайки -->
+            <div style="display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform 0.2s;" 
+                 onclick="toggleLike({{ post.id }})" 
+                 onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(231,76,60,0.1);display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+                   onmouseover="this.style.background='rgba(231,76,60,0.2)'" onmouseout="this.style.background='rgba(231,76,60,0.1)'">
+                <img src="{{ url_for('static', filename='img/heart_svg.svg') }}" alt="Лайк" style="width:16px;height:16px;filter:invert(0.2) sepia(1) saturate(5) hue-rotate(340deg) brightness(0.8);">
+              </div>
+              <span style="font-size:0.9em;color:#666;font-weight:600;" id="likes-count-{{ post.id }}">{{ post.likes_count }}</span>
+            </div>
+            
+            <!-- Комментарии -->
+            <div style="display:flex;align-items:center;gap:6px;cursor:pointer;transition:transform 0.2s;" 
+                 onclick="toggleComments({{ post.id }})"
+                 onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(77,182,226,0.1);display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+                   onmouseover="this.style.background='rgba(77,182,226,0.2)'" onmouseout="this.style.background='rgba(77,182,226,0.1)'">
+                <img src="{{ url_for('static', filename='img/comment_svg.svg') }}" alt="Комментарий" style="width:16px;height:16px;filter:invert(0.3) sepia(1) saturate(3) hue-rotate(200deg) brightness(1.2);">
+              </div>
+              <span style="font-size:0.9em;color:#666;font-weight:600;" id="comments-count-{{ post.id }}">{{ post.comments|length }}</span>
+            </div>
+            
+
+          </div>
+          
+          <!-- Время публикации -->
+          <div style="font-size:0.8em;color:#999;">
+            {{ post.created_at.strftime('%d.%m') }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Кнопка "Показать все" -->
+    <div style="padding:20px;text-align:center;border-top:1px solid rgba(62,198,176,0.08);background:rgba(62,198,176,0.02);">
+      <a href="/feed" style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg, #3ec6b0 0%, #4db6e2 100%);color:#fff;padding:12px 24px;border-radius:25px;text-decoration:none;font-weight:600;font-size:0.9em;transition:all 0.3s;box-shadow:0 4px 15px rgba(62,198,176,0.3);"
+         onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(62,198,176,0.4)'" 
+         onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(62,198,176,0.3)'">
+        <span>Показать все посты</span>
+        <span style="font-size:1.1em;">→</span>
+      </a>
+    </div>
+    
+  {% else %}
+    <!-- Пустое состояние -->
+    <div style="padding:40px;text-align:center;">
+      <div style="font-size:3em;margin-bottom:16px;opacity:0.3;">📝</div>
+      <h3 style="color:#666;margin:0 0 8px 0;font-size:1.1em;">Пока нет постов</h3>
+      <p style="color:#999;margin:0;font-size:0.9em;">Будьте первым, кто поделится чем-то интересным!</p>
+      <a href="/wall" style="display:inline-block;margin-top:16px;background:#3ec6b0;color:#fff;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:600;font-size:0.9em;transition:all 0.3s;"
+         onmouseover="this.style.background='#2ea896'" onmouseout="this.style.background='#3ec6b0'">
+        Создать пост
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<style>
+  .feed-block::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .feed-block::-webkit-scrollbar-track {
+    background: rgba(62,198,176,0.05);
+    border-radius: 10px;
+  }
+  
+  .feed-block::-webkit-scrollbar-thumb {
+    background: rgba(62,198,176,0.3);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+  
+  .feed-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(62,198,176,0.5);
+  }
+  
+  .feed-posts::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .feed-posts::-webkit-scrollbar-track {
+    background: rgba(62,198,176,0.05);
+    border-radius: 10px;
+  }
+  
+  .feed-posts::-webkit-scrollbar-thumb {
+    background: rgba(62,198,176,0.3);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+  
+  .feed-posts::-webkit-scrollbar-thumb:hover {
+    background: rgba(62,198,176,0.5);
+  }
+  
+  .degree-badge-bsc { background: #3ec6b0 !important; color: #fff !important; }
+  .degree-badge-msc { background: #4db6e2 !important; color: #fff !important; }
+  .degree-badge-phd { background: #8e44ad !important; color: #fff !important; }
+  .degree-badge-candidate { background: #e67e22 !important; color: #fff !important; }
+  .degree-badge-doctor { background: #e74c3c !important; color: #fff !important; }
+  .degree-badge-none { background: #bdbdbd !important; color: #fff !important; }
+  
+  @media (max-width: 768px) {
+    .feed-post {
+      padding: 16px !important;
+    }
+    
+    .feed-posts {
+      max-height: 60vh !important;
+    }
+  }
+</style> 

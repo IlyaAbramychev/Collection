@@ -22,13 +22,14 @@
     </div>
     <header>
         <div class="header-inner">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <img src="{{ url_for('static', filename='img/logo_new_png.png') }}" alt="Логотип" class="logo">
             <h1>WorkNest</h1>
             <nav class="header-nav">
                 <ul>
                     <li><a href="/">Главная</a></li>
                     <li><a href="/articles">Статьи</a></li>
-                    <li><a href="/wall">Стена</a></li>
+                    <li><a href="/wall">Моя стена</a></li>
+                    <li><a href="/feed">Общая лента</a></li>
                 </ul>
             </nav>
             <div class="header-user">
@@ -55,17 +56,63 @@
         <main>
             <div class="profile-page">
                 <div class="profile-left">
-                    <section class="profile-section">
-                        <h2>Мои публикации</h2>
-                        <div class="profile-articles-list">
-                            <!-- Карточки публикаций -->
-                            <div class="profile-article-card">
-                                <h3>Пример публикации</h3>
-                                <p>Краткое описание публикации или аннотация.</p>
+                    <section class="profile-section profile-tabs-section" style="padding-top:0;">
+                        <div class="profile-tabs" style="margin-bottom:0;">
+                            <button class="profile-tab-btn active" data-tab="posts">Мои публикации</button>
+                            <button class="profile-tab-btn" data-tab="followers">Читатели ({{ followers_count }})</button>
+                            <button class="profile-tab-btn" data-tab="following">Подписки ({{ following_count }})</button>
+                        </div>
+                        <div class="profile-tab-content" id="tab-posts" style="display:block;">
+                            <h2>Мои публикации</h2>
+                            <div class="profile-articles-list">
+                                {% if user_posts %}
+                                    {% for post in user_posts %}
+                                    <div class="profile-article-card" onclick="window.location.href='/wall'">
+                                        <h3>{{ post.content[:50] }}{% if post.content|length > 50 %}...{% endif %}</h3>
+                                        <p>{{ post.created_at.strftime('%d.%m.%Y') }} • {{ post.likes|length }} лайков • {{ post.comments|length }} комментариев</p>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="color:#666;text-align:center;padding:20px;">У вас пока нет публикаций</p>
+                                {% endif %}
                             </div>
-                            <div class="profile-article-card">
-                                <h3>Ещё одна статья</h3>
-                                <p>Описание второй публикации пользователя.</p>
+                        </div>
+                        <div class="profile-tab-content" id="tab-followers" style="display:none;">
+                            <h2>Читатели</h2>
+                            <div class="profile-follow-list">
+                                {% if followers %}
+                                    {% for follower in followers %}
+                                    <div class="profile-follow-card">
+                                        <img src="{{ url_for('static', filename=follower.avatar) if follower.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:44px;height:44px;border-radius:50%;background:#fafdff;margin-right:14px;">
+                                        <div style="flex:1;">
+                                            <span class="profile-follow-username">{{ follower.username }}</span>
+                                            {% if follower.full_name and follower.show_full_name %}<div style="font-size:0.9em;color:#666;">{{ follower.full_name }}</div>{% endif %}
+                                        </div>
+                                        <button class="profile-follow-btn" onclick="removeFollower('{{ follower.username }}')" style="color:#e53935;border-color:#e53935;">Удалить</button>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="color:#666;text-align:center;padding:20px;">У вас пока нет читателей</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="profile-tab-content" id="tab-following" style="display:none;">
+                            <h2>Подписки</h2>
+                            <div class="profile-follow-list">
+                                {% if following %}
+                                    {% for followed in following %}
+                                    <div class="profile-follow-card">
+                                        <img src="{{ url_for('static', filename=followed.avatar) if followed.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:44px;height:44px;border-radius:50%;background:#fafdff;margin-right:14px;">
+                                        <div style="flex:1;">
+                                            <span class="profile-follow-username">{{ followed.username }}</span>
+                                            {% if followed.full_name and followed.show_full_name %}<div style="font-size:0.9em;color:#666;">{{ followed.full_name }}</div>{% endif %}
+                                        </div>
+                                        <button class="profile-follow-btn" onclick="unfollowUser('{{ followed.username }}')" style="color:#e53935;border-color:#e53935;">Отписаться</button>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p style="color:#666;text-align:center;padding:20px;">Вы пока ни на кого не подписаны</p>
+                                {% endif %}
                             </div>
                         </div>
                     </section>
@@ -82,32 +129,30 @@
                 </div>
                 <aside class="profile-right">
                     <div class="profile-card" id="profileCard">
-                        <div class="profile-avatar" style="position:relative;cursor:pointer;overflow:hidden;">
+                        <div class="profile-avatar" style="position:relative;cursor:pointer;overflow:visible;width:170px;height:170px;display:flex;align-items:center;justify-content:center;">
                           <form id="avatarUploadForm" method="POST" action="/profile/avatar" enctype="multipart/form-data" style="position:relative;">
                             <label for="avatar-input" style="display:block;width:100%;height:100%;cursor:pointer;">
-                              <img id="avatarPreview" src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/font-user.svg') }}" alt="Аватар" style="width:120px;height:120px;object-fit:cover;border-radius:50%;background:#fff;">
-                              <span style="position:absolute;right:10px;bottom:10px;background:#fff;border-radius:50%;padding:6px;box-shadow:0 2px 8px #3ec6b033;display:flex;align-items:center;justify-content:center;">
-                                <img src="{{ url_for('static', filename='img/font-edit.svg') }}" alt="Изменить" style="width:26px;height:26px;">
+                              <img id="avatarPreview" src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:170px;height:170px;object-fit:cover;border-radius:50%;background:#fff;z-index:1;">
+                              <span style="position:absolute;right:16px;bottom:16px;background:#fff;border-radius:50%;padding:6px;border:2px solid #4db6e2;box-shadow:0 2px 8px #3ec6b033;display:flex;align-items:center;justify-content:center;z-index:2;">
+                                <img src="{{ url_for('static', filename='img/edit_pencil_svg.svg') }}" alt="Изменить" style="width:20px;height:20px;">
                               </span>
                               <input id="avatar-input" name="avatar" type="file" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
                             </label>
                           </form>
                         </div>
                         <div class="profile-info">
-                            {% if user.full_name %}<div class="profile-fullname">{{ user.full_name }}</div>{% endif %}
                             <div class="profile-name">{{ user.username }}</div>
-                            {% if user.degree %}<div class="profile-degree">{{ user.degree }}</div>{% endif %}
-                            {% if user.status %}<div class="profile-status">{{ user.status }}</div>{% endif %}
-                            <div class="profile-email">{{ user.email }}</div>
-                            {% if user.public_email %}<div class="profile-public-email">Публичный email: {{ user.public_email }}</div>{% endif %}
-                            {% if user.organization %}<div class="profile-organization">{{ user.organization }}</div>{% endif %}
-                            {% if user.location %}<div class="profile-location">{{ user.location }}</div>{% endif %}
-                            {% if user.interests %}<div class="profile-interests">Интересы: {{ user.interests }}</div>{% endif %}
-                            {% if user.website %}<div class="profile-website"><a href="{{ user.website }}" target="_blank">Сайт/портфолио</a></div>{% endif %}
-                            {% if user.scholar_links %}<div class="profile-scholar-links">Профили: {{ user.scholar_links }}</div>{% endif %}
-                            {% if user.telegram %}<div class="profile-telegram">Telegram: {{ user.telegram }}</div>{% endif %}
-                            {% if user.birthdate %}<div class="profile-birthdate">Дата рождения: {{ user.birthdate }}</div>{% endif %}
-                            {% if user.bio %}<div class="profile-bio">{{ user.bio }}</div>{% endif %}
+                            {% if user.full_name and user.show_full_name %}<div class="profile-fullname">{{ user.full_name }}</div>{% endif %}
+                            {% if user.degree and user.show_degree %}<span class="degree-badge degree-{{ user.degree|lower|replace(' ', '-')|trim }}">{{ user.degree }}</span>{% endif %}
+                            {% if user.status and user.show_status %}<div class="profile-status">{{ user.status }}</div>{% endif %}
+                            {% if user.bio and user.show_bio %}<div class="profile-bio">{{ user.bio }}</div>{% endif %}
+                            {% if user.organization and user.show_organization %}<div class="profile-org">{{ user.organization }}</div>{% endif %}
+                            {% if user.location and user.show_location %}<div class="profile-location">{{ user.location }}</div>{% endif %}
+                            {% if user.interests and user.show_interests %}<div class="profile-interests">{{ user.interests }}</div>{% endif %}
+                            {% if user.scholar_links and user.show_scholar_links %}<div class="profile-links">{{ user.scholar_links }}</div>{% endif %}
+                            {% if user.website and user.show_website %}<div class="profile-website"><a href="{{ user.website }}" target="_blank">{{ user.website }}</a></div>{% endif %}
+                            {% if user.public_email and user.show_public_email %}<div class="profile-public-email">{{ user.public_email }}</div>{% endif %}
+                            {% if user.telegram and user.show_telegram %}<div class="profile-telegram">{{ user.telegram }}</div>{% endif %}
                         </div>
                         <button class="profile-edit-btn" id="editProfileBtn">Редактировать</button>
                     </div>
@@ -130,54 +175,224 @@
     </footer>
     <div class="profile-edit-modal" id="profileEditModal">
         <div class="profile-edit-modal-bg"></div>
-        <form class="profile-edit-form" method="POST" action="/profile/edit">
+        <form class="profile-edit-form" method="POST" action="/profile/edit" style="max-width:800px;width:100%;margin:0 auto;">
+          <div class="profile-edit-header">
             <h2>Редактировать профиль</h2>
-            <label>ФИО
-                <input type="text" name="full_name" value="{{ user.full_name or '' }}">
-            </label>
-            <label>Никнейм (username)
-                <input type="text" name="name" value="{{ user.username }}">
-            </label>
-            <label>Научная степень/звание
-                <input type="text" name="degree" value="{{ user.degree or '' }}">
-            </label>
-            <label>Статус
-                <input type="text" name="status" value="{{ user.status or '' }}">
-            </label>
-            <label>Email (основной)
-                <input type="email" name="email" value="{{ user.email }}">
-            </label>
-            <label>Публичный email
-                <input type="email" name="public_email" value="{{ user.public_email or '' }}">
-            </label>
-            <label>Организация / место работы/учёбы
-                <input type="text" name="organization" value="{{ user.organization or '' }}">
-            </label>
-            <label>Город/страна
-                <input type="text" name="location" value="{{ user.location or '' }}">
-            </label>
-            <label>Научные интересы
-                <input type="text" name="interests" value="{{ user.interests or '' }}">
-            </label>
-            <label>Ссылки на профили (через запятую)
-                <input type="text" name="scholar_links" value="{{ user.scholar_links or '' }}">
-            </label>
-            <label>Сайт/портфолио
-                <input type="text" name="website" value="{{ user.website or '' }}">
-            </label>
-            <label>Дата рождения
-                <input type="text" name="birthdate" value="{{ user.birthdate or '' }}">
-            </label>
-            <label>Telegram
-                <input type="text" name="telegram" value="{{ user.telegram or '' }}">
-            </label>
-            <label>О себе
-                <textarea name="bio">{{ user.bio or '' }}</textarea>
-            </label>
-            <div class="profile-edit-actions">
-                <button type="submit" class="profile-edit-save">Сохранить</button>
-                <button type="button" class="profile-edit-cancel" id="closeEditModal">Отмена</button>
+            <button type="button" class="profile-edit-close" id="closeEditModalX" aria-label="Закрыть">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Навигация по секциям -->
+          <div class="profile-edit-tabs">
+            <button type="button" class="profile-edit-tab active" data-section="personal">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Личные данные
+            </button>
+            <button type="button" class="profile-edit-tab" data-section="academic">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+              </svg>
+              Научная деятельность
+            </button>
+            <button type="button" class="profile-edit-tab" data-section="contacts">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Контакты
+            </button>
+            <button type="button" class="profile-edit-tab" data-section="preview">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              Предпросмотр
+            </button>
+          </div>
+          <!-- Секция: Личные данные -->
+          <div class="profile-edit-section active" id="section-personal">
+            <div class="profile-edit-table">
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="full_name">ФИО</label>
+                  <input type="text" name="full_name" id="full_name" value="{{ user.full_name or '' }}" placeholder="Введите полное имя">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_full_name" id="show_full_name" {% if user.show_full_name %}checked{% endif %}>
+                  <label for="show_full_name">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="status">Статус</label>
+                  <input type="text" name="status" id="status" value="{{ user.status or '' }}" placeholder="Ваш текущий статус">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_status" id="show_status" {% if user.show_status %}checked{% endif %}>
+                  <label for="show_status">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="bio">О себе</label>
+                  <textarea name="bio" id="bio" placeholder="Расскажите о себе...">{{ user.bio or '' }}</textarea>
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_bio" id="show_bio" {% if user.show_bio %}checked{% endif %}>
+                  <label for="show_bio">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="birthdate">Дата рождения</label>
+                  <input type="date" name="birthdate" id="birthdate" value="{{ user.birthdate or '' }}">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_birthdate" id="show_birthdate" {% if user.show_birthdate %}checked{% endif %}>
+                  <label for="show_birthdate">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="location">Город/страна</label>
+                  <input type="text" name="location" id="location" value="{{ user.location or '' }}" placeholder="Москва, Россия">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_location" id="show_location" {% if user.show_location %}checked{% endif %}>
+                  <label for="show_location">👁</label>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <!-- Секция: Научная деятельность -->
+          <div class="profile-edit-section" id="section-academic">
+            <div class="profile-edit-table">
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="degree">Научная степень/звание</label>
+                  <select name="degree" id="degree">
+                    <option value="">Нет степени</option>
+                    <option value="Доктор наук" {% if user.degree == 'Доктор наук' %}selected{% endif %}>Доктор наук (Dr. Sci.)</option>
+                    <option value="Кандидат наук" {% if user.degree == 'Кандидат наук' %}selected{% endif %}>Кандидат наук (PhD, РФ)</option>
+                    <option value="PhD" {% if user.degree == 'PhD' %}selected{% endif %}>Doctor of Philosophy (PhD, EU/US)</option>
+                    <option value="MSc" {% if user.degree == 'MSc' %}selected{% endif %}>Master of Science (MSc)</option>
+                    <option value="BSc" {% if user.degree == 'BSc' %}selected{% endif %}>Bachelor of Science (BSc)</option>
+                  </select>
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_degree" id="show_degree" {% if user.show_degree %}checked{% endif %}>
+                  <label for="show_degree">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="organization">Организация / место работы/учёбы</label>
+                  <input type="text" name="organization" id="organization" value="{{ user.organization or '' }}" placeholder="МГУ, Google, Яндекс">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_organization" id="show_organization" {% if user.show_organization %}checked{% endif %}>
+                  <label for="show_organization">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="interests">Научные интересы</label>
+                  <input type="text" name="interests" id="interests" value="{{ user.interests or '' }}" placeholder="Машинное обучение, биоинформатика">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_interests" id="show_interests" {% if user.show_interests %}checked{% endif %}>
+                  <label for="show_interests">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="scholar_links">Ссылки на профили (через запятую)</label>
+                  <input type="text" name="scholar_links" id="scholar_links" value="{{ user.scholar_links or '' }}" placeholder="ORCID, ResearchGate, Google Scholar">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_scholar_links" id="show_scholar_links" {% if user.show_scholar_links %}checked{% endif %}>
+                  <label for="show_scholar_links">👁</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Секция: Контакты -->
+          <div class="profile-edit-section" id="section-contacts">
+            <div class="profile-edit-table">
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="public_email">Публичный email</label>
+                  <input type="email" name="public_email" id="public_email" value="{{ user.public_email or '' }}" placeholder="example@domain.com">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_public_email" id="show_public_email" {% if user.show_public_email %}checked{% endif %}>
+                  <label for="show_public_email">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="telegram">Telegram</label>
+                  <input type="text" name="telegram" id="telegram" value="{{ user.telegram or '' }}" placeholder="@username">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_telegram" id="show_telegram" {% if user.show_telegram %}checked{% endif %}>
+                  <label for="show_telegram">👁</label>
+                </div>
+              </div>
+              <div class="profile-edit-row">
+                <div class="profile-edit-label">
+                  <label for="website">Веб-сайт</label>
+                  <input type="url" name="website" id="website" value="{{ user.website or '' }}" placeholder="https://example.com">
+                </div>
+                <div class="profile-edit-visibility">
+                  <input type="checkbox" name="show_website" id="show_website" {% if user.show_website %}checked{% endif %}>
+                  <label for="show_website">👁</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Секция: Предпросмотр -->
+          <div class="profile-edit-section" id="section-preview">
+            <div class="profile-preview-container">
+              <h3 style="color: #3ec6b0; margin-bottom: 16px; text-align: center;">Предпросмотр профиля</h3>
+              <div class="profile-card" id="previewCard" style="width: 100%; max-width: 400px; margin: 0 auto;">
+                <div class="profile-avatar">
+                  <img id="previewAvatar" src="{{ url_for('static', filename=user.avatar) if user.avatar else url_for('static', filename='img/profile_user_svg.svg') }}" alt="Аватар" style="width:120px;height:120px;object-fit:cover;border-radius:50%;background:#fff;">
+                </div>
+                <div class="profile-info">
+                  <div class="profile-name" id="previewUsername">{{ user.username }}</div>
+                  <div class="profile-fullname" id="previewFullName" style="display: none;"></div>
+                  <div class="profile-status" id="previewStatus" style="display: none;"></div>
+                  <div class="profile-bio" id="previewBio" style="display: none;"></div>
+                  <div class="profile-org" id="previewOrganization" style="display: none;"></div>
+                  <div class="profile-location" id="previewLocation" style="display: none;"></div>
+                  <div class="profile-interests" id="previewInterests" style="display: none;"></div>
+                  <div class="profile-links" id="previewScholarLinks" style="display: none;"></div>
+                  <div class="profile-website" id="previewWebsite" style="display: none;"></div>
+                  <div class="profile-public-email" id="previewPublicEmail" style="display: none;"></div>
+                  <div class="profile-telegram" id="previewTelegram" style="display: none;"></div>
+                </div>
+              </div>
+              <div class="preview-note" style="text-align: center; margin-top: 16px; font-size: 0.85em; color: #666; font-style: italic;">
+                Так будет выглядеть ваш профиль для других пользователей
+              </div>
+            </div>
+          </div>
+          <div class="profile-edit-actions">
+            <button type="submit" class="profile-edit-save">Сохранить</button>
+            <button type="button" class="profile-edit-cancel" id="closeEditModal">Отмена</button>
+          </div>
         </form>
     </div>
     <script>
@@ -187,9 +402,121 @@ document.getElementById('editProfileBtn').onclick = function() {
 document.getElementById('closeEditModal').onclick = function() {
     document.getElementById('profileEditModal').classList.remove('active');
 };
+
+// Дополнительная кнопка закрытия
+document.getElementById('closeEditModalX').onclick = function() {
+    document.getElementById('profileEditModal').classList.remove('active');
+};
 document.querySelector('.profile-edit-modal-bg').onclick = function() {
     document.getElementById('closeEditModal').click();
 };
+
+// Переключение вкладок в модальном окне
+document.querySelectorAll('.profile-edit-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        // Убираем активный класс у всех вкладок
+        document.querySelectorAll('.profile-edit-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.profile-edit-section').forEach(s => s.classList.remove('active'));
+        
+        // Активируем выбранную вкладку
+        this.classList.add('active');
+        const sectionId = 'section-' + this.dataset.section;
+        document.getElementById(sectionId).classList.add('active');
+        
+        // Обновляем предпросмотр при переходе на вкладку предпросмотра
+        if (this.dataset.section === 'preview') {
+            updatePreview();
+        }
+    });
+});
+
+// Функция обновления предпросмотра
+function updatePreview() {
+    const fields = {
+        'full_name': 'previewFullName',
+        'status': 'previewStatus', 
+        'bio': 'previewBio',
+        'organization': 'previewOrganization',
+        'location': 'previewLocation',
+        'interests': 'previewInterests',
+        'scholar_links': 'previewScholarLinks',
+        'website': 'previewWebsite',
+        'public_email': 'previewPublicEmail',
+        'telegram': 'previewTelegram'
+    };
+    
+    Object.keys(fields).forEach(fieldId => {
+        const input = document.getElementById(fieldId);
+        const preview = document.getElementById(fields[fieldId]);
+        const checkbox = document.getElementById('show_' + fieldId);
+        
+        if (input && preview && checkbox) {
+            const value = input.value.trim();
+            const isVisible = checkbox.checked;
+            
+            if (value && isVisible) {
+                preview.textContent = value;
+                preview.style.display = 'block';
+                
+                // Специальная обработка для website
+                if (fieldId === 'website') {
+                    preview.innerHTML = `<a href="${value}" target="_blank" style="color: #fff; text-decoration: underline;">${value}</a>`;
+                }
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+    });
+    
+    // Обновляем степень
+    const degreeSelect = document.getElementById('degree');
+    const degreeCheckbox = document.getElementById('show_degree');
+    const fullNamePreview = document.getElementById('previewFullName');
+    
+    if (degreeSelect && degreeCheckbox && fullNamePreview) {
+        const degree = degreeSelect.value;
+        const showDegree = degreeCheckbox.checked;
+        const fullName = document.getElementById('full_name').value.trim();
+        const showFullName = document.getElementById('show_full_name').checked;
+        
+        if (showFullName && fullName) {
+            let displayText = fullName;
+            if (showDegree && degree) {
+                displayText += ` (${degree})`;
+            }
+            fullNamePreview.textContent = displayText;
+            fullNamePreview.style.display = 'block';
+        }
+    }
+}
+
+// Добавляем обработчики для обновления предпросмотра в реальном времени
+document.addEventListener('DOMContentLoaded', function() {
+    const fieldsToWatch = [
+        'full_name', 'status', 'bio', 'organization', 'location', 
+        'interests', 'scholar_links', 'website', 'public_email', 'telegram', 'degree'
+    ];
+    
+    fieldsToWatch.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', updatePreview);
+        }
+    });
+    
+    // Обработчики для чекбоксов
+    const checkboxesToWatch = [
+        'show_full_name', 'show_status', 'show_bio', 'show_organization', 'show_location',
+        'show_interests', 'show_scholar_links', 'show_website', 'show_public_email', 'show_telegram', 'show_degree'
+    ];
+    
+    checkboxesToWatch.forEach(checkboxId => {
+        const checkbox = document.getElementById(checkboxId);
+        if (checkbox) {
+            checkbox.addEventListener('change', updatePreview);
+        }
+    });
+});
 
 function previewAvatar(event) {
   const input = event.target;
@@ -203,6 +530,97 @@ function previewAvatar(event) {
     reader.readAsDataURL(input.files[0]);
   }
 }
+
+// --- Переключение вкладок профиля ---
+document.querySelectorAll('.profile-tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.profile-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.profile-tab-content').forEach(tab => tab.style.display = 'none');
+    document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+  });
+});
+// --- Открытие/закрытие бургер-меню профиля ---
+const burgerBtn = document.getElementById('headerBurgerBtn');
+const dropdown = document.getElementById('headerDropdown');
+document.addEventListener('click', function(e) {
+  if (burgerBtn && dropdown) {
+    if (e.target === burgerBtn || burgerBtn.contains(e.target)) {
+      dropdown.classList.toggle('active');
+    } else if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove('active');
+    }
+  }
+});
+
+// --- Функции для работы с подписками ---
+async function followUser(username) {
+  try {
+    const response = await fetch(`/follow/${username}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    const data = await response.json();
+    if (data.success) {
+      location.reload(); // Перезагружаем страницу для обновления данных
+    } else {
+      alert(data.error || 'Ошибка при подписке');
+    }
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert('Ошибка при подписке');
+  }
+}
+
+async function unfollowUser(username) {
+  if (!confirm('Вы уверены, что хотите отписаться?')) {
+    return;
+  }
+  try {
+    const response = await fetch(`/unfollow/${username}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    const data = await response.json();
+    if (data.success) {
+      location.reload(); // Перезагружаем страницу для обновления данных
+    } else {
+      alert(data.error || 'Ошибка при отписке');
+    }
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert('Ошибка при отписке');
+  }
+}
+
+async function removeFollower(username) {
+  if (!confirm('Вы уверены, что хотите удалить этого читателя?')) {
+    return;
+  }
+  try {
+    const response = await fetch(`/unfollow/${username}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+    const data = await response.json();
+    if (data.success) {
+      location.reload(); // Перезагружаем страницу для обновления данных
+    } else {
+      alert(data.error || 'Ошибка при удалении читателя');
+    }
+  } catch (error) {
+    console.error('Ошибка:', error);
+    alert('Ошибка при удалении читателя');
+  }
+}
 </script>
+<script src="{{ url_for('static', filename='profile-validation.js') }}"></script>
+<script src="{{ url_for('static', filename='profile-autosave.js') }}"></script>
 </body>
 </html> 

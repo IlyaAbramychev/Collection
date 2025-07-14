@@ -3,57 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход / Регистрация — WorkNest</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.ico') }}">
+    <title>Авторизация - WorkNest</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='reg_login.css') }}">
-    <style>
-        /* Оставляем только стили для облаков */
-        #clouds {
-            position: fixed;
-            width: 100vw;
-            height: 100vh;
-            left: 0; top: 0;
-            z-index: 0;
-            pointer-events: none;
-        }
-        .cloud {
-            width: 200px; height: 60px;
-            background: #fff;
-            border-radius: 200px;
-            position: absolute;
-            opacity: 0.7;
-        }
-        .cloud:before, .cloud:after {
-            content: '';
-            position: absolute;
-            background: #fff;
-            width: 100px; height: 80px;
-            top: -15px; left: 10px;
-            border-radius: 100px;
-            transform: rotate(30deg);
-        }
-        .cloud:after {
-            width: 120px; height: 120px;
-            top: -55px; left: auto; right: 15px;
-        }
-        .x1 { left: 5vw; top: 10vh; animation: moveclouds 38s linear infinite; }
-        .x2 { left: 60vw; top: 15vh; transform: scale(0.6); opacity: 0.5; animation: moveclouds 55s linear infinite; }
-        .x3 { left: 30vw; top: 30vh; transform: scale(0.8); opacity: 0.6; animation: moveclouds 44s linear infinite; }
-        .x4 { left: 80vw; top: 40vh; transform: scale(0.75); opacity: 0.5; animation: moveclouds 50s linear infinite; }
-        .x5 { left: 10vw; top: 60vh; transform: scale(0.7); opacity: 0.4; animation: moveclouds 60s linear infinite; }
-        .x6 { left: 40vw; top: 70vh; transform: scale(0.5); opacity: 0.35; animation: moveclouds 65s linear infinite; }
-        .x7 { left: 75vw; top: 55vh; transform: scale(0.55); opacity: 0.3; animation: moveclouds 70s linear infinite; }
-        .x8 { left: 20vw; top: 80vh; transform: scale(0.4); opacity: 0.25; animation: moveclouds 75s linear infinite; }
-        .x9 { left: 85vw; top: 25vh; transform: scale(0.5); opacity: 0.3; animation: moveclouds 80s linear infinite; }
-        .x10 { left: 55vw; top: 5vh; transform: scale(0.45); opacity: 0.2; animation: moveclouds 90s linear infinite; }
-        @keyframes moveclouds {
-            0% { margin-left: 100vw; }
-            100% { margin-left: -120vw; }
-        }
-    </style>
+    <link rel="icon" href="{{ url_for('static', filename='img/icon.ico') }}" type="image/x-icon">
 </head>
 <body>
+    <!-- Облачная анимация -->
     <div id="clouds">
         <div class="cloud x1"></div>
         <div class="cloud x2"></div>
@@ -66,127 +22,172 @@
         <div class="cloud x9"></div>
         <div class="cloud x10"></div>
     </div>
+
+    <!-- Header как на основных страницах -->
     <header>
         <div class="header-inner">
-            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Логотип" class="logo">
+            <img src="{{ url_for('static', filename='img/logo_new_png.png') }}" alt="Логотип" class="logo">
             <h1>WorkNest</h1>
             <nav class="header-nav">
                 <ul>
                     <li><a href="/">Главная</a></li>
                     <li><a href="/articles">Статьи</a></li>
-                    <li><a href="/wall">Стена</a></li>
+                    <li><a href="/wall">Моя стена</a></li>
+                    <li><a href="/feed">Общая лента</a></li>
                 </ul>
             </nav>
             <div class="header-user">
-              {% if current_user %}
-                <span class="header-username">{{ current_user.username }}</span>
-                <button class="header-burger" id="headerBurgerBtn" aria-label="Меню">
-                  <span class="burger-icon">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </span>
-                </button>
-                <div class="header-dropdown" id="headerDropdown">
-                  <a href="/profile">Профиль</a>
-                  <a href="/logout">Выйти</a>
-                </div>
-              {% else %}
-                <a href="/reg_login" class="header-login-link">Войти</a>
-              {% endif %}
+                <a href="/" class="header-login-link">← Главная</a>
             </div>
         </div>
     </header>
+
+    <!-- Основной контент -->
     <main>
-        <div class="login-animated-bg">
-            <div class="rings">
-                <i></i><i></i><i></i><i></i>
-            </div>
-            <div class="login-center-group">
-                <div class="login-top-bar">
-                    <a href="/" class="back-btn" title="На главную">&#8592;</a>
-                    <div class="login-toggle-switch">
-                        <input type="checkbox" id="toggle-auth" hidden onchange="toggleAuth()">
-                        <label for="toggle-auth" class="toggle-label">
-                            <span class="toggle-option login">Вход</span>
-                            <span class="toggle-slider"></span>
-                            <span class="toggle-option register">Регистрация</span>
-                        </label>
+        <div class="auth-container">
+            <!-- Кнопка переключения и стрелка назад -->
+            <div class="auth-header">
+                <a href="/" class="back-arrow">←</a>
+                <div class="ios-toggle-container">
+                    <div class="ios-toggle-switch" id="iosToggle" onclick="toggleAuthMode()">
+                        <div class="ios-toggle-option" id="loginOption">Вход</div>
+                        <div class="ios-toggle-option" id="registerOption">Регистрация</div>
+                        <div class="ios-toggle-slider" id="toggleSlider"></div>
                     </div>
                 </div>
-                <div class="login-flip-container" id="flip-container">
-                    <div class="login-flip">
-                        <!-- Форма входа -->
-                        <div class="login-front">
-                            <h2>Вход</h2>
-                            <form method="POST" action="/reg_login" class="login-form">
-                                <div class="login-field">
-                                    <label for="login-username">Имя пользователя:</label>
-                                    <input type="text" id="login-username" name="username" required>
-                                </div>
-                                <div class="login-field">
-                                    <label for="login-password">Пароль:</label>
-                                    <input type="password" id="login-password" name="password" required>
-                                </div>
-                                <button type="submit" class="login-btn">Войти</button>
-                            </form>
+            </div>
+
+            <!-- Контейнер для переворачивающихся форм -->
+            <div class="form-flip-container">
+                <div class="form-flip-inner" id="formFlipInner">
+                    <!-- Форма входа -->
+                    <div class="auth-form form-front" id="loginForm">
+                        <div class="form-header">
+                            <h2>Добро пожаловать!</h2>
+                            <p>Войдите в свой аккаунт</p>
                         </div>
-                        <!-- Форма регистрации -->
-                        <div class="login-back">
-                            <h2>Регистрация</h2>
-                            <form method="POST" action="/register" class="login-form">
-                                <div class="login-field">
-                                    <label for="reg-username">Имя пользователя:</label>
-                                    <input type="text" id="reg-username" name="username" required>
-                                </div>
-                                <div class="login-field">
-                                    <label for="reg-email">Email:</label>
-                                    <input type="email" id="reg-email" name="email" required>
-                                </div>
-                                <div class="login-field">
-                                    <label for="reg-password">Пароль:</label>
-                                    <input type="password" id="reg-password" name="password" required>
-                                </div>
-                                <div class="login-field">
-                                    <label for="reg-password2">Подтвердите пароль:</label>
-                                    <input type="password" id="reg-password2" name="password2" required>
-                                </div>
-                                <button type="submit" class="login-btn">Зарегистрироваться</button>
-                            </form>
+                        
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="form-field">
+                                <label for="username">Имя пользователя</label>
+                                <input type="text" id="username" name="username" required>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="password">Пароль</label>
+                                <input type="password" id="password" name="password" required>
+                            </div>
+                            
+                            <button type="submit" class="auth-btn">Войти</button>
+                        </form>
+                        
+                        <div class="divider">
+                            <span>или войдите через</span>
+                        </div>
+                        
+                        <div class="social-buttons">
+                            <button class="social-btn google" type="button">Google</button>
+                            <button class="social-btn vk" type="button">VK</button>
+                            <button class="social-btn github" type="button">GitHub</button>
+                            <button class="social-btn mail" type="button">Mail.ru</button>
+                        </div>
+                    </div>
+
+                    <!-- Форма регистрации -->
+                    <div class="auth-form form-back" id="registerForm">
+                        <div class="form-header">
+                            <h2>Создать аккаунт</h2>
+                            <p>Присоединяйтесь к WorkNest</p>
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('register') }}">
+                            <div class="form-field">
+                                <label for="reg_username">Имя пользователя</label>
+                                <input type="text" id="reg_username" name="username" required>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="reg_email">Email</label>
+                                <input type="email" id="reg_email" name="email" required>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="reg_password">Пароль</label>
+                                <input type="password" id="reg_password" name="password" required>
+                            </div>
+                            
+                            <div class="form-field">
+                                <label for="reg_confirm_password">Подтвердите пароль</label>
+                                <input type="password" id="reg_confirm_password" name="confirm_password" required>
+                            </div>
+                            
+                            <button type="submit" class="auth-btn">Зарегистрироваться</button>
+                        </form>
+                        
+                        <div class="divider">
+                            <span>или зарегистрируйтесь через</span>
+                        </div>
+                        
+                        <div class="social-buttons">
+                            <button class="social-btn google" type="button">Google</button>
+                            <button class="social-btn vk" type="button">VK</button>
+                            <button class="social-btn github" type="button">GitHub</button>
+                            <button class="social-btn mail" type="button">Mail.ru</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+
     <footer>
         <div class="container">
-            <p>&copy; 2023 WorkNest</p>
+            <p>© 2025 <span class="footer-brand">WorkNest</span></p>
         </div>
     </footer>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for message in messages %}
+                    <div class="flash flash-info">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <script>
-    function toggleAuth() {
-        const flip = document.getElementById('flip-container');
-        const toggle = document.getElementById('toggle-auth');
-        if (toggle.checked) {
-            flip.classList.add('flipped');
-        } else {
-            flip.classList.remove('flipped');
+        let isLoginMode = true;
+
+        function toggleAuthMode() {
+            const formFlipInner = document.getElementById('formFlipInner');
+            const toggleSlider = document.getElementById('toggleSlider');
+            const loginOption = document.getElementById('loginOption');
+            const registerOption = document.getElementById('registerOption');
+            
+            if (isLoginMode) {
+                // Переключаемся на регистрацию
+                formFlipInner.style.transform = 'rotateY(180deg)';
+                toggleSlider.style.transform = 'translateX(calc(100% + 4px))';
+                loginOption.classList.remove('active');
+                registerOption.classList.add('active');
+                isLoginMode = false;
+            } else {
+                // Переключаемся на вход
+                formFlipInner.style.transform = 'rotateY(0deg)';
+                toggleSlider.style.transform = 'translateX(0%)';
+                loginOption.classList.add('active');
+                registerOption.classList.remove('active');
+                isLoginMode = true;
+            }
         }
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-      const burger = document.getElementById('headerBurgerBtn');
-      const dropdown = document.getElementById('headerDropdown');
-      if (burger && dropdown) {
-        burger.onclick = function(e) {
-          e.stopPropagation();
-          dropdown.classList.toggle('active');
-        };
-        document.body.onclick = function() {
-          dropdown.classList.remove('active');
-        };
-      }
-    });
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginOption = document.getElementById('loginOption');
+            loginOption.classList.add('active');
+        });
     </script>
 </body>
 </html> 

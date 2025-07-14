@@ -66,7 +66,7 @@ header {
 }
 
 .header-inner {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@ header {
 }
 .header-nav ul {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -110,13 +110,14 @@ header {
 .header-nav ul li a {
   color: #fff;
   text-decoration: none;
-  font-size: 1.18em;
+  font-size: 1.05em;
   font-weight: 600;
-  padding: 6px 18px;
+  padding: 6px 14px;
   border-radius: 12px;
   transition: background 0.2s, color 0.2s, text-shadow 0.2s;
   text-shadow: 0 1px 4px rgba(44, 62, 80, 0.18);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 .header-nav ul li a:hover {
   background: rgba(44,62,80,0.10);
@@ -128,14 +129,38 @@ header.sticky .header-inner {
   opacity: 0.85;
   box-shadow: 0 2px 12px rgba(44, 62, 80, 0.13);
 }
+@media (max-width: 1100px) {
+  .header-inner {
+    max-width: 98vw;
+    padding: 0 10px;
+  }
+  .header-nav ul {
+    gap: 24px;
+  }
+}
 @media (max-width: 700px) {
   .header-inner {
     flex-direction: column;
     height: auto;
     padding: 16px 10px;
   }
+  .header-nav ul {
+    gap: 12px;
+  }
   .logo {
     margin: 0 0 12px 0;
+  }
+  .header-search {
+    margin: 12px 0 0 0;
+    width: 100%;
+    max-width: 280px;
+  }
+  .header-search input {
+    width: 160px;
+    font-size: 1em;
+  }
+  .header-search input:focus {
+    width: 200px;
   }
 }
 
@@ -258,23 +283,44 @@ footer {
   display: flex;
   align-items: center;
   margin-left: 24px;
-  background: #fafdff;
-  border-radius: 18px;
-  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.07);
-  padding: 2px 8px 2px 12px;
-  transition: box-shadow 0.2s;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(44, 62, 80, 0.12);
+  padding: 3px 12px 3px 18px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(62, 198, 176, 0.2);
+}
+.header-search:hover {
+  box-shadow: 0 6px 20px rgba(44, 62, 80, 0.15);
+  border-color: rgba(62, 198, 176, 0.4);
+  transform: translateY(-1px);
+}
+.header-search:focus-within {
+  box-shadow: 0 8px 25px rgba(62, 198, 176, 0.25);
+  border-color: #3ec6b0;
+  transform: translateY(-2px);
 }
 .header-search input {
   border: none;
   background: transparent;
   outline: none;
-  font-size: 1em;
-  padding: 8px 6px 8px 0;
-  width: 120px;
-  transition: width 0.2s;
+  font-size: 1.05em;
+  padding: 10px 8px 10px 0;
+  width: 140px;
+  transition: all 0.3s ease;
+  color: #2c3e50;
+  font-weight: 500;
 }
 .header-search input:focus {
-  width: 180px;
+  width: 220px;
+}
+.header-search input::placeholder {
+  color: #7f8c8d;
+  transition: color 0.3s ease;
+}
+.header-search input:focus::placeholder {
+  color: #bdc3c7;
 }
 .header-search button {
   background: none;
@@ -282,30 +328,43 @@ footer {
   color: #3ec6b0;
   font-size: 1.2em;
   cursor: pointer;
-  padding: 4px 6px;
-  transition: color 0.2s;
+  padding: 6px 8px;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .header-search button:hover {
   color: #187a6e;
+  background: rgba(62, 198, 176, 0.1);
+  transform: scale(1.1);
 }
 .header-search input.typewriter-active::placeholder {
-  color: #187a6e;
+  color: #3ec6b0;
   opacity: 1;
   font-style: italic;
+  font-weight: 600;
+  animation: typewriterGlow 2s ease-in-out infinite alternate;
 }
 .header-search input.typewriter-active {
   caret-color: #3ec6b0;
 }
+@keyframes typewriterGlow {
+  0% { text-shadow: 0 0 5px rgba(62, 198, 176, 0.3); }
+  100% { text-shadow: 0 0 10px rgba(62, 198, 176, 0.6); }
+}
 .search-icon-img {
-  width: 1.35em;
-  height: 1.35em;
+  width: 1.4em;
+  height: 1.4em;
   display: inline-block;
   vertical-align: middle;
-  filter: drop-shadow(0 1px 2px rgba(44,62,80,0.10));
-  transition: filter 0.2s;
+  filter: drop-shadow(0 2px 4px rgba(44,62,80,0.15));
+  transition: all 0.3s ease;
 }
 .header-search button:hover .search-icon-img {
-  filter: drop-shadow(0 2px 4px #3ec6b0);
+  filter: drop-shadow(0 4px 8px rgba(62, 198, 176, 0.4));
+  transform: rotate(15deg);
 }
 /* --- PROFILE PAGE STYLES --- */
 .profile-page {
@@ -545,14 +604,15 @@ footer {
   min-height: 100vh;
 }
 .profile-edit-modal.active {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 9999 !important;
 }
 .profile-edit-modal-bg {
   position: absolute;
   left: 0; top: 0; right: 0; bottom: 0;
-  background: rgba(44,62,80,0.18);
-  backdrop-filter: blur(2px);
+  background: rgba(44,62,80,0.6);
+  backdrop-filter: blur(8px);
   z-index: 1;
 }
 .profile-edit-form {
@@ -589,19 +649,26 @@ footer {
   font-size: 1em;
   color: #187a6e;
   font-family: 'Montserrat', Arial, sans-serif;
-  margin-bottom: 4px;
+  margin-bottom: 16px;
+  position: relative;
+  width: 100%;
+  min-width: 220px;
+  max-width: 100%;
 }
 .profile-edit-form input,
-.profile-edit-form textarea {
+.profile-edit-form textarea,
+.profile-edit-form select {
+  width: 100%;
   margin-top: 4px;
   border: 1.5px solid #4db6e2;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 8px 40px 8px 10px; /* справа место под иконку */
   font-size: 1em;
   font-family: 'Montserrat', Arial, sans-serif;
   background: #fafdff;
   color: #187a6e;
   transition: border 0.18s;
+  box-sizing: border-box;
 }
 .profile-edit-form input:focus,
 .profile-edit-form textarea:focus {
@@ -617,6 +684,7 @@ footer {
   justify-content: flex-end;
   gap: 12px;
   margin-top: 8px;
+  margin-right: 20px;
 }
 .profile-edit-save {
   background: #3ec6b0;
@@ -657,6 +725,194 @@ footer {
     max-height: 90vh;
   }
 }
+/* --- Дополнительные стили для улучшенного модального окна --- */
+.profile-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(62,198,176,0.2);
+}
+
+.profile-edit-header h2 {
+  margin: 0;
+  color: #3ec6b0;
+  font-size: 1.3em;
+}
+
+.profile-edit-close {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-edit-close:hover {
+  background: rgba(62,198,176,0.1);
+  color: #3ec6b0;
+}
+
+.profile-edit-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(62,198,176,0.1);
+  padding: 4px;
+}
+
+.profile-edit-tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: 600;
+  transition: all 0.2s;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.profile-edit-tab:hover {
+  background: rgba(62,198,176,0.2);
+  color: #3ec6b0;
+}
+
+.profile-edit-tab.active {
+  background: #3ec6b0;
+  color: #fff;
+}
+
+.profile-edit-tab svg {
+  width: 18px;
+  height: 18px;
+}
+
+.profile-edit-section {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.profile-edit-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Улучшенные стили для полей ввода */
+.profile-edit-form input[type="date"] {
+  color: #187a6e;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
+.profile-edit-form input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.3) sepia(1) saturate(3) hue-rotate(180deg);
+}
+
+.profile-edit-form input::placeholder,
+.profile-edit-form textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.profile-edit-form input:focus,
+.profile-edit-form textarea:focus,
+.profile-edit-form select:focus {
+  border-color: #3ec6b0;
+  box-shadow: 0 0 0 3px rgba(62,198,176,0.1);
+}
+
+/* --- Стили для улучшенного выпадающего профиля --- */
+.enhanced-profile-dropdown {
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.enhanced-profile-dropdown[style*="display: block"] {
+  opacity: 1;
+}
+
+.dropdown-content {
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.followers-grid::-webkit-scrollbar,
+.following-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.followers-grid::-webkit-scrollbar-track,
+.following-grid::-webkit-scrollbar-track {
+  background: rgba(62,198,176,0.1);
+  border-radius: 2px;
+}
+
+.followers-grid::-webkit-scrollbar-thumb,
+.following-grid::-webkit-scrollbar-thumb {
+  background: rgba(62,198,176,0.5);
+  border-radius: 2px;
+}
+
+.followers-grid::-webkit-scrollbar-thumb:hover,
+.following-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(62,198,176,0.7);
+}
+
+.profile-follow-btn {
+  transition: all 0.2s ease;
+}
+
+.profile-follow-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.profile-follow-btn.following:hover {
+  background: #c0392b !important;
+}
+
+.profile-stats {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 /* --- END PROFILE EDIT MODAL --- */
 .header-user {
   display: flex;
@@ -821,4 +1077,483 @@ main, .container, .profile-page, .section-block {
   right: 0;
   position: absolute;
   transition: box-shadow 0.18s, border 0.18s;
+}
+.post-menu-dropdown button {
+  transition: background 0.18s, color 0.18s, transform 0.18s;
+}
+.post-menu-dropdown button:hover {
+  background: #f3fafd;
+  color: #3ec6b0;
+  transform: translateX(6px);
+}
+.degree-badge {
+  display: inline-block;
+  background: #4db6e2;
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 0.95em;
+  margin-left: 8px;
+  font-weight: 600;
+}
+.degree-badge.degree-bsc { background: #4db6e2 !important; }           /* BSc — зелёный-голубой */
+.degree-badge.degree-msc { background: #3e6cb0 !important; }           /* MSc — синий */
+.degree-badge.degree-phd { background: #a259e6 !important; }           /* PhD — фиолетовый */
+.degree-badge.degree-кандидат-наук { background: #ff9800 !important; } /* Кандидат наук — оранжевый */
+.degree-badge.degree-доктор-наук { background: #e53935 !important; }   /* Доктор наук — красный */
+.degree-badge.degree-нет-степени { background: #bdbdbd !important; }   /* Нет степени — серый */
+label > select[name='degree'] {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #4db6e2;
+  border-radius: 8px;
+  font-size: 1em;
+  color: #222;
+  background: #fafdff;
+  transition: border 0.2s, box-shadow 0.2s;
+  outline: none;
+  margin-top: 8px;
+  font-family: inherit;
+}
+label > select[name='degree']:focus {
+  border: 2px solid #3ec6b0;
+  box-shadow: 0 0 0 2px rgba(62, 198, 176, 0.15);
+}
+.visibility-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  z-index: 10;
+}
+
+.visibility-toggle input[type="checkbox"] {
+  display: none;
+}
+
+.visibility-toggle label {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: 6px;
+  background: #4db6e2;
+  color: #fff;
+  font-size: 1.25em;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px #4db6e233;
+}
+
+.visibility-toggle input[type="checkbox"]:checked + label {
+  background: #3ec6b0;
+  color: #fff;
+}
+
+.visibility-toggle label:hover {
+  background: #187a6e;
+  color: #fff;
+}
+
+.visibility-toggle input[type="checkbox"]:checked + label:hover {
+  background: #3ec6b0;
+}
+
+/* Специальные стили для поля textarea */
+label:has(textarea) .visibility-toggle {
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+/* Корректируем отступы для полей ввода */
+.profile-edit-form {
+  padding-right: 0 !important; /* убираем лишний отступ, теперь паддинг у input/textarea */
+}
+
+/* Обеспечиваем правильное позиционирование для select */
+label:has(select) {
+  margin-bottom: 20px;  /* Дополнительный отступ для select */
+}
+
+label:has(select) .visibility-toggle {
+  top: 50%;  /* Центрируем для select */
+  right: 8px;
+  transform: translateY(-50%);
+}
+
+.profile-info > div {
+  margin-bottom: 8px;
+  color: #fff;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
+.profile-org, .profile-location, .profile-interests,
+.profile-links, .profile-website, .profile-public-email,
+.profile-telegram {
+  font-size: 0.95em;
+  opacity: 0.9;
+  padding: 4px 0;
+}
+
+.profile-website a {
+  color: #fff;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.profile-website a:hover {
+  opacity: 0.8;
+}
+
+.profile-links {
+  word-break: break-all;
+}
+
+.profile-telegram:before {
+  content: '@';
+  opacity: 0.8;
+}
+
+/* СТИЛИ ДЛЯ ВИДИМОСТИ ПОЛЯ ВНУТРИ input-with-visibility */
+.input-with-visibility {
+  position: relative;
+  width: 100%;
+}
+.input-with-visibility input,
+.input-with-visibility textarea,
+.input-with-visibility select {
+  width: 100%;
+  padding-right: 40px;
+  box-sizing: border-box;
+}
+.input-with-visibility .visibility-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  z-index: 2;
+  pointer-events: auto;
+}
+.input-with-visibility .visibility-toggle input[type="checkbox"] {
+  display: none;
+}
+.input-with-visibility .visibility-toggle label {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4db6e2;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 1px 4px #4db6e233;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  overflow: hidden;
+  text-align: center;
+}
+.input-with-visibility .visibility-toggle input[type="checkbox"]:checked + label {
+  background: #3ec6b0;
+}
+.input-with-visibility .visibility-toggle label:hover {
+  background: #187a6e;
+}
+.profile-edit-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.profile-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.profile-edit-label {
+  flex: 1 1 70%;
+  display: flex;
+  flex-direction: column;
+}
+.profile-edit-label label {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.profile-edit-label input,
+.profile-edit-label textarea,
+.profile-edit-label select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #4db6e2;
+  font-size: 1em;
+  background: #fafdff;
+  color: #187a6e;
+}
+.profile-edit-visibility {
+  flex: 0 0 36px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100%;
+  position: relative;
+}
+.profile-edit-visibility input[type="checkbox"] {
+  display: none;
+}
+.profile-edit-visibility label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  max-width: 28px;
+  max-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4db6e2;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: 0 1px 4px #4db6e233;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  overflow: hidden;
+  text-align: center;
+}
+.profile-edit-visibility input[type="checkbox"]:checked + label {
+  background: #3ec6b0;
+}
+.profile-edit-visibility label:hover {
+  background: #187a6e;
+}
+.comment-username {
+  color: #187a6e;
+  font-weight: 700;
+  font-family: 'Montserrat', 'Quicksand', Arial, sans-serif;
+  font-size: 1.08em;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+}
+
+.profile-dropbox {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.13);
+  margin: 12px 0 0 0;
+  padding: 16px 18px 10px 18px;
+  overflow: hidden;
+  transition: max-height 0.22s cubic-bezier(.4,1.6,.6,1), opacity 0.18s;
+  opacity: 1;
+  max-height: 320px;
+  font-size: 1em;
+  color: #187a6e;
+}
+.profile-dropbox div {
+  color: #187a6e;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 1em;
+  margin-bottom: 6px;
+}
+.profile-dropbox .profile-org,
+.profile-dropbox .profile-location,
+.profile-dropbox .profile-interests,
+.profile-dropbox .profile-links,
+.profile-dropbox .profile-website,
+.profile-dropbox .profile-public-email,
+.profile-dropbox .profile-telegram {
+  color: #3ec6b0;
+  font-size: 0.98em;
+  margin-bottom: 4px;
+}
+.profile-dropbox a {
+  color: #4db6e2;
+  text-decoration: underline;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+.profile-dropbox a:hover {
+  opacity: 0.8;
+}
+.profile-dropbox .profile-public-email {
+  font-weight: 600;
+  color: #187a6e;
+}
+@keyframes profileDropIn {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 320px; }
+}
+.profile-tabs-section {
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.10);
+  background: #fff;
+  padding: 0 0 22px 0;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: visible;
+}
+.profile-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 0;
+  position: relative;
+  z-index: 2;
+  padding-left: 28px;
+  padding-top: 18px;
+}
+.profile-tab-btn {
+  background: #eaf6fa;
+  color: #187a6e;
+  border: none;
+  border-radius: 18px;
+  padding: 10px 28px;
+  font-weight: 700;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 1.08em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.07);
+  outline: none;
+  position: relative;
+  margin-bottom: -2px;
+  z-index: 3;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.profile-tab-btn.active {
+  background: #4db6e2;
+  color: #fff;
+  box-shadow: 0 4px 16px #4db6e233;
+  z-index: 4;
+}
+.profile-tabs-section {
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+  padding-top: 0;
+}
+.profile-tabs-section .profile-tab-content {
+  border-radius: 0 0 18px 18px;
+  box-shadow: none;
+  background: transparent;
+  padding: 32px 28px 22px 28px;
+  margin-bottom: 0;
+  animation: fadeInTab 0.22s cubic-bezier(.4,1.6,.6,1);
+  min-height: 180px;
+}
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.profile-follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 18px;
+}
+.profile-follow-card {
+  display: flex;
+  align-items: center;
+  background: #fafdff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px #3ec6b022;
+  padding: 12px 18px;
+  gap: 14px;
+  transition: box-shadow 0.18s, transform 0.18s;
+  position: relative;
+}
+.profile-follow-card:hover {
+  box-shadow: 0 6px 24px #4db6e233;
+  transform: translateY(-2px) scale(1.02);
+}
+.profile-follow-username {
+  font-weight: 700;
+  color: #187a6e;
+  font-size: 1.08em;
+  font-family: 'Montserrat', Arial, sans-serif;
+  margin-right: 8px;
+}
+.profile-follow-btn {
+  margin-left: auto;
+  background: #fff;
+  color: #4db6e2;
+  border: 1.5px solid #4db6e2;
+  border-radius: 8px;
+  padding: 6px 18px;
+  font-weight: 600;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border 0.18s;
+  box-shadow: 0 1px 4px #4db6e233;
+}
+.profile-follow-btn:hover {
+  background: #4db6e2;
+  color: #fff;
+  border: 1.5px solid #3ec6b0;
+}
+.profile-follow-btn[style*='color:#e53935'] {
+  color: #e53935 !important;
+  border-color: #e53935 !important;
+}
+.profile-follow-btn[style*='color:#e53935']:hover {
+  background: #e53935 !important;
+  color: #fff !important;
+  border-color: #b71c1c !important;
+}
+
+/* Отступы между постами */
+.wall-post {
+  margin-bottom: 24px !important;
+}
+
+.wall-post:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Отступы для правой колонки с лентой */
+.wall-right .wall-post {
+  margin-bottom: 20px !important;
+}
+
+.wall-right .wall-post:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Отступы для постов в правой колонке главной страницы */
+aside .wall-post {
+  margin-bottom: 20px !important;
+}
+
+aside .wall-post:last-child {
+  margin-bottom: 0 !important;
+}
+
+.editor-paragraph {
+  margin: 6px 0;
+  font-size: 16px;
+  line-height: 1.4;
 }
