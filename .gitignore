@@ -31,4 +31,4 @@ __pycache__/
 *.so
 *.dll
 *.egg-info/
-*.dist-info/
+*.dist-info/db/*.db

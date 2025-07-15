@@ -1,0 +1,985 @@
+{% extends "base.html" %}
+{% from 'macros.html' import render_academic_rank, render_user_name_with_rank, render_clickable_user, render_clickable_avatar %}
+
+{% block title %}{{ article.title }} - WorkNest{% endblock %}
+
+{% block content %}
+<main class="page-center">
+    <section class="article-wrapper">
+        <div id="reading-progress-bar"></div>
+        <div class="article-detail-container">
+            <div class="two-column-layout">
+                <aside class="meta-sidebar">
+                    <div class="actions-menu">
+                        {% if current_user %}
+                            {% set article_id = article.id %}
+                            <button class="btn btn-icon action-like{% if article.liked_by_current %} active{% endif %}" onclick="toggleLike('article', {{ article_id }})" title="Поставить лайк">
+                                <span class="likes-info"><span>❤️</span><span class="action-count">{{ article.likes_count }}</span></span>
+                            </button>
+                        {% else %}
+                            <span class="btn btn-icon disabled"><span class="likes-info"><span>❤️</span><span class="action-count">{{ article.likes_count }}</span></span></span>
+                        {% endif %}
+                        <button class="btn btn-icon action-comment" onclick="scrollToComments()" title="Комментарии"><span class="comment-info"><span>💬</span><span class="action-count">{{ comments|length }}</span></span></button>
+                        {% if current_user %}
+                            <button class="btn btn-icon action-bookmark" onclick="toggleBookmark('article', {{ article_id }})" title="В закладки"><span>🔖</span></button>
+                        {% endif %}
+                        <div class="dropdown action-share">
+                            <button class="btn btn-icon dropdown-toggle" onclick="toggleShareMenu(event)" title="Поделиться"><span>🔗</span></button>
+                            <div class="dropdown-menu" id="shareMenu" style="display:none;">
+                                <a href="https://twitter.com/intent/tweet?url={{ request.url }}" target="_blank">Twitter</a>
+                                <a href="https://t.me/share/url?url={{ request.url }}" target="_blank">Telegram</a>
+                                <a href="#" onclick="copyArticleLink(event)">Копировать ссылку</a>
+                            </div>
+                        </div>
+                        {% if current_user and current_user.id != article.user_id %}
+                            <button class="btn btn-icon action-report" onclick="reportContent('article', {{ article_id }})" title="Пожаловаться"><span>⚠️</span></button>
+                        {% endif %}
+                    </div>
+                </aside>
+                <article>
+                    {% if article.cover_image %}
+                        <div class="article-cover mb-4">
+                            <img src="{{ url_for('static', filename=article.cover_image) }}" alt="Обложка статьи" class="article-cover-image">
+                        </div>
+                    {% endif %}
+                    <div class="article-header-block">
+                        <div class="article-meta-icons">
+                            <div class="meta-action">
+                                <span class="meta-icon">❤️</span>
+                                <span class="meta-count">{{ article.likes_count }}</span>
+                                <span class="meta-label">Лайк</span>
+                            </div>
+                            <div class="meta-action">
+                                <span class="meta-icon">💬</span>
+                                <span class="meta-count">{{ comments|length }}</span>
+                                <span class="meta-label">Комментарии</span>
+                            </div>
+                            <div class="meta-action">
+                                <span class="meta-icon">📌</span>
+                                <span class="meta-label">Закладка</span>
+                            </div>
+                            <div class="meta-action" onclick="copyArticleLink(event)" title="Копировать ссылку" aria-label="Копировать ссылку">
+                                <span class="meta-icon">🔗</span>
+                                <span class="meta-label">Копировать</span>
+                            </div>
+                        </div>
+                        <div class="article-header-main">
+                            <h1 class="article-title">{{ article.title }}</h1>
+                            <div class="article-meta-block">
+                                {{ render_clickable_user(article.author) }}
+                                {% if article.author.academic_rank %}
+                                    <span class="author-rank-tag">{{ article.author.get_academic_rank_display() }}</span>
+                                {% endif %}
+                                <span class="meta-separator">•</span>
+                                <span class="article-date">{{ article.created_at.strftime('%d.%m.%Y') }}</span>
+                                {% if article.reading_time %}
+                                    <span class="meta-separator">•</span>
+                                    <span class="reading-time">{{ article.reading_time }} мин</span>
+                                {% endif %}
+                                {% if article.views_count %}
+                                    <span class="meta-separator">•</span>
+                                    <span class="views">👁 {{ article.views_count }}</span>
+                                {% endif %}
+                            </div>
+                            {% if article.category %}
+                                <span class="category-block">
+                                    <span class="category-label"><b>Категория:</b></span>
+                                    <span class="category-tag" style="background-color: {{ article.category.color|default('#0d6efd') }};">{{ article.category.name }}</span>
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="article-content-block">
+                        <div class="markdown-content">
+                            {{ article.content | markdown | safe }}
+                        </div>
+                    </div>
+                </article>
+                <div class="article-actions">
+                    <button class="action action-like{% if article.liked_by_current %} liked{% endif %}" onclick="toggleLike('article', {{ article.id }})" title="Поставить лайк" aria-label="Поставить лайк">
+                        <span class="icon">❤️</span>
+                        <span class="count">{{ article.likes_count }}</span>
+                        <span class="label">Лайк</span>
+                    </button>
+                    <button class="action action-comment" onclick="scrollToComments()" title="Комментарии" aria-label="Комментарии">
+                        <span class="icon">💬</span>
+                        <span class="count">{{ comments|length }}</span>
+                        <span class="label">Комментарии</span>
+                    </button>
+                    <button class="action action-bookmark{% if article.bookmarked_by_current %} bookmarked{% endif %}" onclick="toggleBookmark('article', {{ article.id }})" title="Сохранить" aria-label="Сохранить">
+                        <span class="icon">📌</span>
+                        <span class="label">Закладка</span>
+                    </button>
+                    <button class="action action-share" onclick="copyArticleLink(event)" title="Копировать ссылку" aria-label="Копировать ссылку">
+                        <span class="icon">🔗</span>
+                        <span class="label">Копировать</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Остальные блоки: похожие статьи, комментарии, кнопка наверх -->
+            {% if similar_articles %}
+                <div class="similar-articles related-posts mt-5 fade-in">
+                    <h3 class="mb-3">Похожие статьи</h3>
+                    <div class="related-list">
+                        {% for similar in similar_articles if similar.id != article.id %}
+                            <div class="related-article-card">
+                                <h3 class="related-article-title"><a href="{{ url_for('article_detail', article_id=similar.id) }}">{{ similar.title }}</a></h3>
+                                <div class="related-article-meta">
+                                    <a href="/user/{{ similar.author.username }}" class="author">{{ similar.author.username }}</a>
+                                    {% if similar.author.academic_rank %}
+                                        <span class="rank">{{ similar.author.get_academic_rank_display() }}</span>
+                                    {% endif %}
+                                    <span>•</span>
+                                    <span class="date">{{ similar.created_at.strftime('%d.%m.%Y') }}</span>
+                                    {% if similar.reading_time %}
+                                        <span>•</span>
+                                        <span class="reading-time">{{ similar.reading_time }} мин</span>
+                                    {% endif %}
+                                    {% if similar.views_count %}
+                                        <span>•</span>
+                                        <span class="views">👁 {{ similar.views_count }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if similar.summary %}
+                                    <p class="related-article-excerpt">{{ similar.summary }}</p>
+                                {% endif %}
+                                {% if similar.tags %}
+                                    <div class="related-tags">
+                                        {% for tag in similar.tags %}
+                                            <span class="tag">#{{ tag.name.lstrip('#') }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <div class="article-divider mt-5 mb-5"></div>
+            <!-- Кнопка Наверх -->
+            <button id="scrollToTopBtn" title="Наверх" class="scrollToTopBtn">⬆️</button>
+            <!-- Комментарии -->
+            <div class="comments-section mt-5" id="comments">
+                <h3 class="mb-3 comments-title">
+                    <span class="comments-icon">💬</span> 
+                    Комментарии ({{ comments|length }})
+                </h3>
+                {% if current_user %}
+                    <div class="comment-form-container mb-4">
+                        <form class="comment-form" onsubmit="submitComment(event, {{ article_id }}, 'article')">
+                            <div class="flex comment-form-flex">
+                                {{ render_clickable_avatar(current_user, size='48px') }}
+                                <div class="flex-1 ml-3">
+                                    <textarea name="content" 
+                                              class="comment-input" 
+                                              placeholder="Написать комментарий..."
+                                              rows="3"
+                                              required></textarea>
+                                    <div class="comment-actions">
+                                        <button type="submit" class="btn btn-primary comment-submit-btn">
+                                            <span>Отправить</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                {% endif %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                        <div class="comment-card" id="comment-{{ comment.id }}">
+                            <div class="comment-header">
+                                <div class="flex flex-center">
+                                    {{ render_clickable_avatar(comment.author, size='48px') }}
+                                    <div class="ml-3">
+                                        <div class="flex flex-center">
+                                            {{ render_clickable_user(comment.author) }}
+                                        </div>
+                                        <div class="text-muted">
+                                            <small>{{ comment.created_at.strftime('%d.%m.%Y в %H:%M') }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="comment-content">
+                                <p>{{ comment.content }}</p>
+                            </div>
+                            <div class="comment-actions">
+                                {% if current_user %}
+                                    <button class="btn btn-sm btn-outline comment-reply-btn" onclick="replyToComment({{ comment.id }})">Ответить</button>
+                                {% endif %}
+                            </div>
+                            {% if comment.replies %}
+                                <div class="comment-replies">
+                                    {% for reply in comment.replies %}
+                                        <div class="comment-card reply" id="comment-{{ reply.id }}">
+                                            <div class="comment-header">
+                                                <div class="flex flex-center">
+                                                    {{ render_clickable_avatar(reply.author, size='40px') }}
+                                                    <div class="ml-3">
+                                                        <div class="flex flex-center">
+                                                            {{ render_clickable_user(reply.author) }}
+                                                        </div>
+                                                        <div class="text-muted">
+                                                            <small>{{ reply.created_at.strftime('%d.%m.%Y в %H:%M') }}</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="comment-content">
+                                                <p>{{ reply.content }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        margin: 0;
+    }
+    .page-center {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+    .article-wrapper {
+        flex: 0 1 920px;
+        margin: 0 auto;
+    }
+    .two-column-layout {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 24px;
+    }
+    @media (max-width: 1024px) {
+        .two-column-layout {
+            grid-template-columns: 1fr;
+        }
+        .reactions {
+            display: flex;
+            gap: 20px;
+            margin-top: 24px;
+        }
+    }
+    /* Убрать паразитные паддинги у #page, если есть */
+    #page {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    #reading-progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #00e1d3, #4db6e2);
+        z-index: 1001;
+        transition: width 0.2s;
+    }
+    .article-main-content-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    .article-actions-floating {
+        position: sticky;
+        top: 120px;
+        margin-right: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-width: 56px;
+        z-index: 10;
+        background: none;
+    }
+    .actions-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+    }
+    .btn.btn-icon {
+        background: #23272f;
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #00e1d3;
+        box-shadow: 0 2px 8px rgba(44,62,80,0.10);
+        transition: background 0.2s, color 0.2s, transform 0.15s;
+        cursor: pointer;
+        position: relative;
+    }
+    .btn.btn-icon.active {
+        color: #e53935;
+        background: #fff0f0;
+        animation: like-pop 0.3s;
+    }
+    @keyframes like-pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.25); }
+        100% { transform: scale(1); }
+    }
+    .btn.btn-icon:hover {
+        background: #2c2c2c;
+        color: #4db6e2;
+        transform: scale(1.08);
+    }
+    .btn.btn-icon.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    .dropdown-menu {
+        position: absolute;
+        left: 60px;
+        top: 0;
+        background: #23272f;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(44,62,80,0.13);
+        padding: 0.5rem 1rem;
+        display: none;
+        min-width: 120px;
+        z-index: 100;
+    }
+    .dropdown-menu a {
+        color: #00e1d3;
+        text-decoration: none;
+        display: block;
+        padding: 0.5rem 0;
+    }
+    .dropdown-menu a:hover {
+        color: #4db6e2;
+    }
+    @media (max-width: 900px) {
+        .article-main-content-wrapper {
+            flex-direction: column;
+        }
+        .article-actions-floating {
+            flex-direction: row;
+            position: static;
+            margin: 0 0 16px 0;
+            min-width: unset;
+            gap: 12px;
+            justify-content: flex-start;
+        }
+        .actions-menu {
+            flex-direction: row;
+            gap: 12px;
+        }
+    }
+    .article-detail-container {
+        max-width: clamp(800px, 60vw, 1100px);
+        margin: 0 auto;
+    }
+    
+    .article-title {
+        font-size: 2.5rem;
+        color: #f0f0f0;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+    
+    .article-summary {
+        font-size: 1.1rem;
+        color: #ccc;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+    
+    .article-taxonomy {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .category-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        color: white;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .tag-link {
+        color: #00e1d3;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .tag-link:hover {
+        text-decoration: underline;
+    }
+    
+    .article-actions {
+        padding: 1rem 0;
+        border-top: 1px solid #2c2c2c;
+        border-bottom: 1px solid #2c2c2c;
+    }
+    
+    .article-cover {
+        text-align: center;
+    }
+    
+    .article-cover-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+    
+    .article-content {
+        margin: 2rem 0;
+    }
+    
+    .markdown-content {
+        line-height: 1.8;
+        color: #e0e0e0;
+    }
+    
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3,
+    .markdown-content h4,
+    .markdown-content h5,
+    .markdown-content h6 {
+        color: #f0f0f0;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .markdown-content code {
+        background-color: #2c2c2c;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-family: 'Fira Code', 'Consolas', monospace;
+    }
+    
+    .markdown-content pre {
+        background-color: #1e1e1e;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+    
+    .markdown-content blockquote {
+        border-left: 4px solid #00e1d3;
+        padding-left: 1rem;
+        margin: 1rem 0;
+        color: #ccc;
+    }
+    
+    .similar-articles {
+        border-top: 1px solid #2c2c2c;
+        padding-top: 2rem;
+    }
+    
+    .article-card {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #2c2c2c;
+        transition: all 0.3s ease;
+    }
+    
+    .article-card:hover {
+        border-color: #00e1d3;
+        transform: translateY(-2px);
+    }
+    
+    .article-card-title {
+        margin: 0.5rem 0;
+    }
+    
+    .article-card-title a {
+        color: #f0f0f0;
+        text-decoration: none;
+    }
+    
+    .article-card-title a:hover {
+        color: #00e1d3;
+    }
+    
+    .article-card-summary {
+        color: #ccc;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+    
+    .comments-section {
+        border-top: 1px solid #2c2c2c;
+        padding-top: 2rem;
+    }
+    
+    .comments-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #f0f0f0;
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .comments-icon {
+        font-size: 1.25rem;
+    }
+    
+    .comment-form-container {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .comment-form-flex {
+        display: flex;
+        align-items: flex-start;
+    }
+    
+    .comment-input {
+        width: 100%;
+        background-color: #2c2c2c;
+        border: 1px solid #3c3c3c;
+        border-radius: 8px;
+        padding: 0.75rem;
+        color: #f0f0f0;
+        resize: vertical;
+        min-height: 80px;
+    }
+    
+    .comment-input:focus {
+        outline: none;
+        border-color: #00e1d3;
+    }
+    
+    .comment-actions {
+        margin-top: 1rem;
+        text-align: right;
+    }
+    
+    .comment-submit-btn {
+        background: linear-gradient(90deg, #00e1d3, #4db6e2);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: background 0.2s, transform 0.15s;
+    }
+
+    .comment-submit-btn:hover {
+        background: linear-gradient(90deg, #00c6b4, #3d99c2);
+        transform: translateY(-2px);
+    }
+    
+    .comment {
+        background-color: #1e1e1e;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid #2c2c2c;
+    }
+    
+    .comment.reply {
+        margin-left: 3rem;
+        margin-top: 1rem;
+        background-color: #242424;
+    }
+    
+    .comment-content {
+        margin: 1rem 0;
+    }
+    
+    .comment-replies {
+        margin-top: 1rem;
+    }
+
+    .comment-reply-btn {
+        background: #2c2c2c;
+        border: 1px solid #3c3c3c;
+        color: #00e1d3;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: background 0.2s, border-color 0.2s;
+    }
+
+    .comment-reply-btn:hover {
+        background: #3c3c3c;
+        border-color: #00e1d3;
+    }
+    
+    @media (max-width: 768px) {
+        .article-detail-container {
+            padding: 0 1rem;
+        }
+        
+        .article-title {
+            font-size: 2rem;
+        }
+        
+        .grid-3 {
+            grid-template-columns: 1fr;
+        }
+        
+        .comment.reply {
+            margin-left: 1rem;
+        }
+    }
+    .related-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .related-list li {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        align-items: start;
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+    .related-list img {
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .related-list .no-thumb {
+        width: 140px;
+        height: 140px;
+        background: #1d1d1d;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #555;
+        font-size: 2.5rem;
+    }
+    @media (max-width: 768px) {
+        .related-list li {
+            grid-template-columns: 1fr;
+        }
+    }
+    .article-divider {
+        border-top: 1px solid rgba(255,255,255,.08);
+        width: 100%;
+    }
+    h1.article-title {
+        font-size: 40px;
+        line-height: 1.15;
+    }
+    @media (max-width: 768px) {
+        h1.article-title {
+            font-size: 28px;
+        }
+    }
+    .btn.btn-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 0.5rem 1.25rem;
+        font-size: 1.5rem;
+        border-radius: 50%;
+        transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .likes-info, .comment-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .dropdown-menu {
+        position: absolute;
+        left: 60px;
+        top: 0;
+        background: #23272f;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(44,62,80,0.13);
+        padding: 0.5rem 1rem;
+        display: none;
+        min-width: 120px;
+        z-index: 100;
+    }
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .scrollToTopBtn {
+        position: fixed;
+        right: 32px;
+        bottom: 32px;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+    }
+    .scrollToTopBtn.visible {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .meta-sidebar {
+        position: sticky;
+        top: 100px;
+        align-self: flex-start;
+        z-index: 10;
+    }
+    @media (max-width: 1024px) {
+        .meta-sidebar {
+            position: static !important;
+            top: unset !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Прогресс-бар чтения
+    document.addEventListener('scroll', function() {
+        const bar = document.getElementById('reading-progress-bar');
+        const article = document.querySelector('.article-content-block');
+        if (!bar || !article) return;
+        const rect = article.getBoundingClientRect();
+        const winHeight = window.innerHeight;
+        const total = article.offsetHeight - winHeight + 120;
+        const scrolled = window.scrollY - article.offsetTop + 120;
+        let percent = Math.max(0, Math.min(1, scrolled / total));
+        bar.style.width = (percent * 100) + '%';
+    });
+
+    function toggleLike(type, id) {
+        fetch(`/api/like/${type}/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const button = document.querySelector(`button[onclick="toggleLike('${type}', ${id})"]`);
+                const countSpan = document.getElementById(`likes-count-${id}`);
+                
+                if (data.liked) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+                
+                countSpan.textContent = data.likes_count;
+            }
+        });
+    }
+    
+    function toggleBookmark(type, id) {
+        fetch(`/api/bookmark/${type}/${id}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const button = document.querySelector(`button[onclick="toggleBookmark('${type}', ${id})"]`);
+                if (data.bookmarked) {
+                    button.classList.add('active');
+                    showToast('Добавлено в закладки', 'success');
+                } else {
+                    button.classList.remove('active');
+                    showToast('Удалено из закладок', 'info');
+                }
+            }
+        });
+    }
+    
+    function scrollToComments() {
+        document.getElementById('comments').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function shareArticle() {
+        if (navigator.share) {
+            navigator.share({
+                title: document.title,
+                url: window.location.href
+            });
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            showToast('Ссылка скопирована в буфер обмена', 'success');
+        }
+    }
+    
+    function reportContent(type, id) {
+        if (confirm('Вы уверены, что хотите пожаловаться на этот контент?')) {
+            fetch(`/report/${type}/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'reason=inappropriate&description=Неподходящий контент'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Жалоба отправлена модераторам', 'success');
+                }
+            });
+        }
+    }
+    
+    function submitComment(event, articleId, type) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        
+        fetch(`/api/comment/${type}/${articleId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                form.reset();
+                location.reload(); // Простое обновление страницы
+            }
+        });
+    }
+    
+    function replyToComment(commentId) {
+        // Простая реализация - добавляем форму ответа
+        const comment = document.getElementById(`comment-${commentId}`);
+        const replyForm = document.createElement('div');
+        replyForm.className = 'reply-form mt-3';
+        replyForm.innerHTML = `
+            <form onsubmit="submitReply(event, ${commentId})">
+                <textarea name="content" class="comment-input" placeholder="Ответить..." rows="2" required></textarea>
+                <div class="comment-actions">
+                    <button type="button" onclick="this.closest('.reply-form').remove()" class="btn btn-sm btn-outline">Отмена</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Ответить</button>
+                </div>
+            </form>
+        `;
+        
+        // Удаляем существующую форму ответа, если есть
+        const existingForm = comment.querySelector('.reply-form');
+        if (existingForm) {
+            existingForm.remove();
+        } else {
+            comment.appendChild(replyForm);
+        }
+    }
+    
+    function submitReply(event, parentId) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        formData.append('parent_id', parentId);
+        
+        fetch('/wall/comment', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+    
+    function showToast(message, type) {
+        // Простая реализация уведомлений
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem;
+            background-color: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            color: white;
+            border-radius: 4px;
+            z-index: 1000;
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    // Кнопка Наверх
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    window.addEventListener('scroll', function() {
+        if (window.scrollY > 300) {
+            scrollBtn.classList.add('visible');
+        } else {
+            scrollBtn.classList.remove('visible');
+        }
+    });
+    scrollBtn.onclick = function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    function copyArticleLink(event) {
+        event.preventDefault();
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(function() {
+            showToast('Ссылка скопирована!', 'success');
+        });
+    }
+
+    // Sticky meta-sidebar stops at related posts
+    document.addEventListener('DOMContentLoaded', function() {
+        const metaSidebar = document.querySelector('.meta-sidebar');
+        const stopBlock = document.querySelector('.related-posts');
+        if (metaSidebar && stopBlock) {
+            const observer = new IntersectionObserver(([entry]) => {
+                if (entry.isIntersecting) {
+                    metaSidebar.style.position = 'absolute';
+                } else {
+                    metaSidebar.style.position = 'sticky';
+                }
+            }, {
+                root: null,
+                threshold: 0,
+            });
+            observer.observe(stopBlock);
+        }
+    });
+</script>
+{% endblock %} 
